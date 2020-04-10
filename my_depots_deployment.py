@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Apr 10 08:42:44 2020
-
 @author: DELL
 """
 import numpy as np
