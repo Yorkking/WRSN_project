@@ -61,7 +61,7 @@ def get_span_tree_and_leaves( node_list ):
     
     leaf_node_list=[]
     #得到叶节点集合作为候选节点集合
-    for i in range(not_leaf_list):
+    for i in range(size):
         if not_leaf_list[i]==0:
             leaf_node_list.append(i)
     
