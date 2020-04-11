@@ -71,7 +71,7 @@ class WRSNEnv(object):
     def __init__(self):
         node_nums = 50
         self.loc_nodes = [ np.random.uniform(0.0,100, size=(1,2)).reshape(2)  for _ in range(node_nums)]
-
+        self.node_nums = node_nums
         self.capacity_mc = 10000
 
         self.capacity_mc = 30000
@@ -114,9 +114,11 @@ class WRSNEnv(object):
 
         num_depot = 1
         depot_pos_set, sensors_depart_set, num_mc_set = self._optimal_deployment(num_depot)
-        while True:
+        while num_depot < self.node_nums:
             num_depot += 1
             depot_pos_set1, sensors_depart_set1, num_mc_set1 = self._optimal_deployment(num_depot)
+            if num_mc_set1 < 0:
+                continue
 
             if num_mc_set - num_mc_set1 < thre:
                 return depot_pos_set, sensors_depart_set, num_mc_set
@@ -158,6 +160,9 @@ class WRSNEnv(object):
             U += self.charge_power_for_node(index)
         
         A, DL = self.area_depart(num_depot,U)
+        for area in A:
+            if len(area) == 0:
+                return DL, A, -1
         num_list = self.algorithm_5(DL, A)
         Dprint(num_list)
         total_MC_nums = sum(num_list)
@@ -192,9 +197,11 @@ class WRSNEnv(object):
         
         '''
         #print(A)
-        A = [[self.loc_nodes[i] for i in area] for area in A]
+        Dprint(A)
+        nodes_locs = [[self.loc_nodes[i] for i in area] for area in A]
+        
         DL = [[] for _ in range(K)]
-        for index, area in enumerate(A):
+        for index, area in enumerate(nodes_locs):
             if(len(area) == 0):
                 continue
             x = 0.0
