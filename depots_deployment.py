@@ -114,6 +114,8 @@ class WRSNEnv(object):
 
         num_depot = 1
         depot_pos_set, sensors_depart_set, num_mc_set = self._optimal_deployment(num_depot)
+        print("************************************************************")
+        print("K:",len(depot_pos_set))
         print("depot_pos_set:",depot_pos_set)
         print("sensors_depart_set",sensors_depart_set)
         print("num_mc_set",num_mc_set)
@@ -124,6 +126,8 @@ class WRSNEnv(object):
                 continue
 
             if num_mc_set - num_mc_set1 < thre:
+                print("************************************************************")
+                print("K:",len(depot_pos_set))
                 print("depot_pos_set:",depot_pos_set)
                 print("sensors_depart_set",sensors_depart_set)
                 print("num_mc_set",num_mc_set)
@@ -131,6 +135,8 @@ class WRSNEnv(object):
                 #return depot_pos_set, sensors_depart_set, num_mc_set
 
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
+        print("************************************************************")
+        print("K:",len(depot_pos_set))
         print("depot_pos_set:",depot_pos_set)
         print("sensors_depart_set",sensors_depart_set)
         print("num_mc_set",num_mc_set)
@@ -181,7 +187,7 @@ class WRSNEnv(object):
        
         total_MC_nums = sum(num_list)
     
-        return DL, A, total_MC_nums
+        return DL_list, area_list, total_MC_nums
 
     '''
     Algm5: min_dispatch
