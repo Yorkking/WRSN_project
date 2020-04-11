@@ -1,0 +1,13 @@
+算法五的初始化参数类型：
+
+输入：
+	depot_list：充电桩列表，元素是np.array([x, y])
+	area_list：传感器区域列表，里面的元素也是列表（该列表里的元素是np.array([x, y]) ）
+
+self.loc_nodes：列表，里面的元素是np.array([x, y])
+self.capacity_mc: float（mc电容量）
+self.move_power: float(移动耗能效率)
+self.charge_power_for_node：已定义
+
+输出：
+	mc_num_list：MC数量列表，元素是int

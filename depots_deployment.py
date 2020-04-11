@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-
+from myUtil import Dprint
 ############################下面两个函数是功能函数，无需加入类。。。吧？
 
 
@@ -66,7 +66,18 @@ def get_span_tree_and_leaves( node_list ):
     return tree_dict, leaf_node_list
 
 class WRSNEnv(object):
-    def __init__(self, **kwargs):
+    def __init__(self):
+        node_nums = 50
+        self.loc_nodes = [ np.random.uniform(0.0,100, size=(1,2)).reshape(2)  for _ in range(node_nums)]
+        self.capacity_mc = 100
+        self.move_power = 1
+    
+    def Unused__init__(self, **kwargs):
+        '''
+        By shuitang:
+            先不用这个init
+        '''
+        
         self.net_shape = net_shape # int, net_shape * net_shape square network
         self.num_node = num_node # int, number of sensor nodes
         self.loc_nodes = np.random.uniform(0, net_shape, (num_node, 2)).astype('i') # locations of sensor nodes
@@ -106,7 +117,11 @@ class WRSNEnv(object):
 
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
 
-    def _optimal_deployment(self, num_depot):
+    def Unused_optimal_deployment(self, num_depot):
+        '''
+            By shuitang:
+                先不用这部分代码
+        '''
         # you may initialize the residual energy of sensor nodes as below
 
         num_simulation = 50
@@ -120,8 +135,28 @@ class WRSNEnv(object):
         # opt_sensors_depart_set, opt_num_mc_set 需要保证在 (1-a)*100% 的情况下，下一充电周期开始时的 sum(self.energy_nodes)
         # 不小于当前充电周期开始时的 sum(self.energy_nodes) ??? 标注
         # （如取 a=0.05，则相应地在上面的 simulations 中至少有 50*0.95=48 个 simulation 满足约束条件）
-        opt_depot_pos_set, opt_sensors_depart_set, opt_num_mc_set = ???
+        #opt_depot_pos_set, opt_sensors_depart_set, opt_num_mc_set = ???
         return opt_depot_pos_set, opt_sensors_depart_set, opt_num_mc_set
+
+    
+    def _optimal_deployment(self, num_depot):
+        '''
+            By shuitang:
+                我重写了这部分来作为我们初始模拟实验
+                call the self.charge_power_for_node @ baiyun
+        '''
+        
+        ## 每个区域能量的上限考虑为总能量/num_depot
+        U = 0.0
+        for index,_ in enumerate(self.loc_nodes):
+            U += self.charge_power_for_node(index)
+        
+        A, DL = self.area_depart(num_depot,U)
+        num_list = self.algorithm_5(DL, A)
+        
+        total_MC_nums = sum([sum(x) for x in num_list])
+    
+        return DL, A, total_MC_nums
 
     '''
     Algm5: min_dispatch
@@ -144,11 +179,14 @@ class WRSNEnv(object):
     
     '''
         我觉得需要定义一个节点类吧，不如搞index真的麻烦？
-    
-    '''
-    
-    def calculate_center_axi(self,K,A,err0):
-        A = [self.loc_nodes[i] for i in A]
+    '''  
+    def calculate_center_axi(self,K,A):
+        '''
+            By shuitang
+        
+        '''
+        #print(A)
+        A = [[self.loc_nodes[i] for i in area] for area in A]
         DL = [[] for _ in range(K)]
         for index, area in enumerate(A):
             if(len(area) == 0):
@@ -166,17 +204,23 @@ class WRSNEnv(object):
         return DL
     def energy_consume(self, area):
         '''
+        By shuitang:
             area 这个类有些麻烦
             这里能量的估计，简单地把这个区域内传感器的能耗加了起来
+            注: 这里调用了self.charge_power_for_node() @ baiyun
         '''
         ans = 0.0
         for i in area:
-            ans += self.max_power_node[i]-self.min_power_node[i]
+            ans += self.charge_power_for_node(i)
         
         return ans
             
         
     def argmin_i(self,e,DL):
+        '''
+        By shuitang:
+        
+        '''
         dist_i = [ ((e-d)**2,index)  for index,d in enumerate(DL)]
         
         dist_i.sort()
@@ -184,29 +228,48 @@ class WRSNEnv(object):
         return [i for _,i in dist_i]
         
         
-    def area_depart(self,K, U, loc_nodes):
+    def area_depart(self,K, U, err0 = 10,loc_nodes = None):
         '''
+        By shuitang:
+        args:
             K : int
-            U : 上限
+            U : 每个depot负责的充电能量上限
             loc_nodes: 节点列表,list[np.array(2),...]
+        returns:
+            A :  [[id1,id2,...,],[id1,id2,...],...] 对应的depot负责的传感器的id的列表的列表
+            DL : [np.array([x,y]),...,], depot的位置列表
+            
+        这个算法，用来初始确定depot的位置，以及每个depot负责的传感器的id集合
+        所用到信息有:
+            self.loc_nodes: 传感器的位置列表
+            
         '''
+        
+       
+        if loc_nodes is None:
+            loc_nodes = self.loc_nodes
         
         ## 初始化，但是需要保证，每一类都必须要有元素
         ## 
-        A = [[] for _ in range(K)]
-        for index,node in enumerate(loc_nodes):
+        A = [[i] for i in range(K)]    
+        for index in range(K,len(loc_nodes)):
             i = np.random.randint(0,K)
             A[i].append(index)
+        
         DL = self.calculate_center_axi(K,A)
         
-        while True:
-            A1 = A
+        epoch = 0
+        while epoch < 100:
+            A1 = A+[]
             A = [[] for i in range(K)]
             
             for index,e in enumerate(loc_nodes):
                 j_list = self.argmin_i(e,DL)
                 for j in j_list:
                     if self.energy_consume(A[j]+[index]) <= U:
+                        A[j].append(index)
+                        break
+                    elif j == len(j_list)-1:
                         A[j].append(index)
                         break
                     
@@ -218,6 +281,10 @@ class WRSNEnv(object):
             if diff < err0:
                 return A, DL1
             DL = DL1 + []
+            
+            epoch += 1
+        
+        return A,DL
      
         
     def charge_power_for_node(self, node_j_id):
@@ -310,6 +377,4 @@ class WRSNEnv(object):
             
             #最后，将结果放入列表
             mc_num_list.append(mc_num)
-            
-    	
-    	return mc_num_list
+        return mc_num_list
