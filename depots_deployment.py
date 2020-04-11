@@ -25,7 +25,9 @@ def get_span_tree_and_leaves( node_list ):
     #得到距离数组，并存储起来
     size=len(node_list)
     dist_array=np.zeros((size, size))#第一个位置是充电桩，然后第二个位置是node_list第一个节点。。。
-    not_leaf_list=[0 for i in range(1,size)]#判断不是叶节点的列表，若为1，则不是叶节点
+    
+    not_leaf_list=[0 for i in range(size)]#判断不是叶节点的列表，若为1，则不是叶节点
+    
     remain_node_list=[i for i in range(1,size)]#未加入树的节点列表
     tree_node_list=[0]#加入树的节点列表
     
