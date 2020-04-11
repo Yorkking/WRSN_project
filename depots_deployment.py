@@ -71,7 +71,7 @@ class WRSNEnv(object):
     def __init__(self):
         node_nums = 50
         self.loc_nodes = [ np.random.uniform(0.0,100, size=(1,2)).reshape(2)  for _ in range(node_nums)]
-        self.capacity_mc = 100
+        self.capacity_mc = 10000
         self.move_power = 1
     
     def Unused__init__(self, **kwargs):
@@ -155,8 +155,8 @@ class WRSNEnv(object):
         
         A, DL = self.area_depart(num_depot,U)
         num_list = self.algorithm_5(DL, A)
-        
-        total_MC_nums = sum([sum(x) for x in num_list])
+        Dprint(num_list)
+        total_MC_nums = sum(num_list)
     
         return DL, A, total_MC_nums
 
@@ -223,7 +223,9 @@ class WRSNEnv(object):
         By shuitang:
         
         '''
-        dist_i = [ ((e-d)**2,index)  for index,d in enumerate(DL)]
+        dist_i = [ (sum((e-d)**2),index)  for index,d in enumerate(DL)]
+        
+        #Dprint("dist_i",dist_i)
         
         dist_i.sort()
         
@@ -278,14 +280,27 @@ class WRSNEnv(object):
             #A_axi = [self.loc_nodes[i] for i in A]
             DL1 = self.calculate_center_axi(K,A)
             
-            diff = np.sum([ (d1-d2)**2 for d1,d2 in zip(DL,DL1)])/len(DL)
+            Dprint(DL1,DL)
+            
+            ## 聚类会导致某一类为空！！！！
+            ## 强行聚类？？？
+            diff = 0.0
+            for d1,d2 in zip(DL,DL1):
+                try:
+                    diff +=  sum((d1-d2)**2)
+                except:
+                    return A,DL
+            
+            
+            #diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
             
             if diff < err0:
+                Dprint(DL,A)
                 return A, DL1
             DL = DL1 + []
             
             epoch += 1
-        
+        Dprint(DL,A)
         return A,DL
      
         
@@ -379,4 +394,5 @@ class WRSNEnv(object):
             
             #最后，将结果放入列表
             mc_num_list.append(mc_num)
+        Dprint(mc_num_list)
         return mc_num_list
