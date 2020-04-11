@@ -71,7 +71,7 @@ class WRSNEnv(object):
     def __init__(self):
         node_nums = 50
         self.loc_nodes = [ np.random.uniform(0.0,100, size=(1,2)).reshape(2)  for _ in range(node_nums)]
-        self.capacity_mc = 100
+        self.capacity_mc = 10000
         self.move_power = 1
     
     def Unused__init__(self, **kwargs):
