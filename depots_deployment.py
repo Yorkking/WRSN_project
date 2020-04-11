@@ -70,7 +70,7 @@ def get_span_tree_and_leaves( node_list ):
 class WRSNEnv(object):
     def __init__(self):
         node_nums = 50
-        self.loc_nodes = [ np.random.uniform(0.0,100, size=(1,2)).reshape(2)  for _ in range(node_nums)]
+        self.loc_nodes = [ np.random.uniform(0.0,100.0, size=(1,2)).reshape(2)  for _ in range(node_nums)]
         self.node_nums = node_nums
         self.capacity_mc = 10000
 
@@ -114,6 +114,9 @@ class WRSNEnv(object):
 
         num_depot = 1
         depot_pos_set, sensors_depart_set, num_mc_set = self._optimal_deployment(num_depot)
+        print("depot_pos_set:",depot_pos_set)
+        print("sensors_depart_set",sensors_depart_set)
+        print("num_mc_set",num_mc_set)
         while num_depot < self.node_nums:
             num_depot += 1
             depot_pos_set1, sensors_depart_set1, num_mc_set1 = self._optimal_deployment(num_depot)
@@ -121,9 +124,16 @@ class WRSNEnv(object):
                 continue
 
             if num_mc_set - num_mc_set1 < thre:
-                return depot_pos_set, sensors_depart_set, num_mc_set
+                print("depot_pos_set:",depot_pos_set)
+                print("sensors_depart_set",sensors_depart_set)
+                print("num_mc_set",num_mc_set)
+
+                #return depot_pos_set, sensors_depart_set, num_mc_set
 
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
+        print("depot_pos_set:",depot_pos_set)
+        print("sensors_depart_set",sensors_depart_set)
+        print("num_mc_set",num_mc_set)
 
     def Unused_optimal_deployment(self, num_depot):
         '''
@@ -159,12 +169,16 @@ class WRSNEnv(object):
         for index,_ in enumerate(self.loc_nodes):
             U += self.charge_power_for_node(index)
         
-        A, DL = self.area_depart(num_depot,U)
-        for area in A:
-            if len(area) == 0:
-                return DL, A, -1
-        num_list = self.algorithm_5(DL, A)
-        Dprint(num_list)
+        A, DL = self.area_depart(num_depot,U/num_depot)
+        area_list = []
+        DL_list = []
+        for index,area in enumerate(A):
+            if len(area) != 0:
+                area_list.append(area)
+                DL_list.append(DL[index])
+                
+        num_list = self.algorithm_5(DL_list, area_list)
+       
         total_MC_nums = sum(num_list)
     
         return DL, A, total_MC_nums
@@ -197,7 +211,7 @@ class WRSNEnv(object):
         
         '''
         #print(A)
-        Dprint(A)
+        
         nodes_locs = [[self.loc_nodes[i] for i in area] for area in A]
         
         DL = [[] for _ in range(K)]
@@ -306,12 +320,12 @@ class WRSNEnv(object):
             #diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
             
             if diff < err0:
-                Dprint(DL,A)
+                
                 return A, DL1
             DL = DL1 + []
             
             epoch += 1
-        Dprint(DL,A)
+        
         return A,DL
      
         
@@ -405,5 +419,5 @@ class WRSNEnv(object):
             
             #最后，将结果放入列表
             mc_num_list.append(mc_num)
-        Dprint(mc_num_list)
+        
         return mc_num_list
