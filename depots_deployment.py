@@ -365,7 +365,7 @@ class WRSNEnv(object):
                 node_choosen_list[ candidate_node_list[j] ]=1
             
             
-            mc_num=0#所需MC数量
+            mc_num=1#所需MC数量（至少要一个巡回）
             node_in_route_num=1#巡回中节点数量
             route_centre_loc=copy.deepcopy( depot_list[i] )#巡回的中心位置
             route_power=0#巡回所需的大致能量
