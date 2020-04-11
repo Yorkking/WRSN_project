@@ -5,9 +5,9 @@
 
 >- `__init__.py`: 不用管
 >- `myUtil.py`: 封装一些配置函数，比如debug函数
->- `test.py`: 测试函数，我们先让我们的算法跑起来，写的一个测试函数, 即我们**只需要运行改文件来跑我们的算法！**
->- `depots_deployment.py`: 算法的主要全部代码：包括 shuitang 和 baiyun 写的算法全部代码
->- `my_depots_deployment.py`: baiyun 那部分写的代码，先已经把该部分代码全部加入到 `depots_deployment.py`
+>- `test.py`: 测试函数，我们先让我们的算法跑起来，写的一个测试函数, 即我们**只需要运行该文件来跑我们的算法！**
+>- `depots_deployment.py`: 算法的主要代码：包括 shuitang 和 baiyun 写的算法部分的代码
+>- `my_depots_deployment.py`: baiyun 那部分的代码，先已经把该部分代码全部加入到 `depots_deployment.py`
 >- `参数笔记.txt`: 白云的参数
 
 现在正在测试，我重写了`WRSNEnv`部分代码，在`depots_deployment.py`已写注释(搜索 By shuitang)。具体而言：重写了 `__init__`部分，只初始化了部分目前用得上的变量。
