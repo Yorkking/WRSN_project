@@ -14,7 +14,7 @@
 
 
 
-现在运行出现了一些 Bug !
+
 
 ## 算法性能评估指标
 1. predicted survival rate of sensor nodes (mininum charging duration: charging time of MC + maintainance; if a sensor owns enough energy till the end of mininum charging duration, we say it survives.)
