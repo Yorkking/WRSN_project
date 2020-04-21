@@ -114,7 +114,7 @@ class WRSNEnv(object):
     def optimal_deployment(self, thre=3):
         ''' Return the optimal deployment of depots and MCs. '''
 
-        num_depot = 5
+        num_depot = 3
         depot_pos_set, sensors_depart_set, num_set_list = self._optimal_deployment(num_depot)
         num_mc_set = len(num_set_list)
         
@@ -219,18 +219,13 @@ class WRSNEnv(object):
     
     
     '''
-        我觉得需要定义一个节点类吧，不然搞index真的麻烦？
-        
+        我觉得需要定义一个节点类吧，不然搞index真的麻烦？   
     '''  
     def calculate_center_axi(self,K,A):
         '''
             By shuitang
-        
         '''
-        #print(A)
-        
-        nodes_locs = [[self.loc_nodes[i] for i in area] for area in A]
-        
+        nodes_locs = [[self.loc_nodes[i] for i in area] for area in A]   
         DL = [[] for _ in range(K)]
         for index, area in enumerate(nodes_locs):
             if(len(area) == 0):
@@ -240,12 +235,12 @@ class WRSNEnv(object):
             for node in area:
                 x += node[0]
                 y += node[1]
-            x = x/len(node)
-            y = y/len(node)
+            x = x/len(area)
+            y = y/len(area)
             
-            DL[index] = np.array([x,y])
-            
+            DL[index] = np.array([x,y])       
         return DL
+
     def energy_consume(self, area):
         '''
         By shuitang:
@@ -270,8 +265,8 @@ class WRSNEnv(object):
         for node in cluster_nodes:
             x += node[0]
             y += node[1]
-        x = x/len(node)
-        y = y/len(node)
+        x = x/len(cluster_nodes)
+        y = y/len(cluster_nodes)
         
         return np.array([x,y])
         
@@ -280,11 +275,12 @@ class WRSNEnv(object):
         By shuitang:
         
         '''
-        dist_i = [ (sum((e-d)**2),index)  for index,d in enumerate(DL)]
+        dist_i = [ (sum((e-d)**2)**0.5,index)  for index,d in enumerate(DL)]
         
         #Dprint("dist_i",dist_i)
         
         dist_i.sort()
+        #Dprint("dist_i",dist_i)
         
         return [i for _,i in dist_i]
     
@@ -295,10 +291,12 @@ class WRSNEnv(object):
         y_list = [nodes[1]  for nodes in self.loc_nodes]
         plt.plot(x_list, y_list, 'o')
         Colors = [val  for key,val in myUtil.cnames.items()]
+        cnt = 0
         for index, cluster in enumerate(clusterSets):
             x_temp = [self.loc_nodes[i][0] for i in cluster]
             y_temp = [self.loc_nodes[i][1] for i in cluster]
-            plt.plot(x_temp, y_temp, 'o', color=Colors[index+10])
+            plt.plot(x_temp, y_temp, 'o', color=Colors[10*cnt])
+            cnt +=  1
         plt.xlabel("clusters nums="+str(len(clusterSets)))
         #plt.legend()
         plt.show()
@@ -380,26 +378,20 @@ class WRSNEnv(object):
             
             for index,e in enumerate(loc_nodes):
                 j_list = self.argmin_i(e,DL)
-                for j in j_list:
+                for index1,j in enumerate(j_list):
                     if self.energy_consume(A[j]+[index]) <= U:
                         A[j].append(index)
                         break
-                    elif j == len(j_list)-1:
+                    elif index1 == len(j_list)-1:
                         A[j].append(index)
                         break
                     
-            #A_axi = [self.loc_nodes[i] for i in A]
-            
+            #A_axi = [self.loc_nodes[i] for i in A]           
             ## 处理空聚类
             ## 采取的措施是：选取其他类中选取一个距离它们自身中心最远的点加入到该集合中，目的在于消除方差
-            
-            
             DL1 = self.calculate_center_axi(K,A)
-            self.processNullCluster(A,K,DL1)
-            
+            self.processNullCluster(A,K,DL1)         
             DL1 = self.calculate_center_axi(K,A)
-            
-            
             #Dprint(DL1,DL)
             
             '''
@@ -414,12 +406,9 @@ class WRSNEnv(object):
             
             '''
             diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
-            
-            if diff < err0:
-                
+            if diff < err0:    
                 return A, DL1
-            DL = DL1 + []
-            
+            DL = DL1 + []   
             epoch += 1
         
         return A,DL
