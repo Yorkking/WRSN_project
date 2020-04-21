@@ -12,7 +12,11 @@
 
 现在正在测试，我重写了`WRSNEnv`部分代码，在`depots_deployment.py`已写注释(搜索 By shuitang)。具体而言：重写了 `__init__`部分，只初始化了部分目前用得上的变量。
 
+### 实验结果
 
+目前的结果如下：
+
+![聚类结果](image/%E8%81%9A%E7%B1%BB%E7%BB%93%E6%9E%9C.png)
 
 
 
