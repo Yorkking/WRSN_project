@@ -1,6 +1,8 @@
 import numpy as np
 import copy
 from myUtil import Dprint
+import myUtil
+import matplotlib.pyplot as plt
 ############################下面两个函数是功能函数，无需加入类。。。吧？
 
 
@@ -69,12 +71,12 @@ def get_span_tree_and_leaves( node_list ):
 
 class WRSNEnv(object):
     def __init__(self):
-        node_nums = 50
-        self.loc_nodes = [ np.random.uniform(0.0,100.0, size=(1,2)).reshape(2)  for _ in range(node_nums)]
+        node_nums = 100
+        edge_size = 1e5
+        self.loc_nodes = [ np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)  for _ in range(node_nums)]
         self.node_nums = node_nums
-        self.capacity_mc = 10000
-
-        self.capacity_mc = 30000
+        
+        self.capacity_mc = 1e6
 
         self.move_power = 1
     
@@ -109,37 +111,42 @@ class WRSNEnv(object):
     def _init_energy(self, min_ratio=0.5):
         return np.random.uniform(low=min_ratio, high=1., size=self.num_node)
 
-    def optimal_deployment(self, thre=5):
+    def optimal_deployment(self, thre=3):
         ''' Return the optimal deployment of depots and MCs. '''
 
-        num_depot = 1
-        depot_pos_set, sensors_depart_set, num_mc_set = self._optimal_deployment(num_depot)
-        print("************************************************************")
-        print("K:",len(depot_pos_set))
-        print("depot_pos_set:",depot_pos_set)
-        print("sensors_depart_set",sensors_depart_set)
-        print("num_mc_set",num_mc_set)
-        while num_depot < self.node_nums:
+        num_depot = 5
+        depot_pos_set, sensors_depart_set, num_set_list = self._optimal_deployment(num_depot)
+        num_mc_set = len(num_set_list)
+        
+        while num_depot < min(self.node_nums,10):
             num_depot += 1
-            depot_pos_set1, sensors_depart_set1, num_mc_set1 = self._optimal_deployment(num_depot)
+            depot_pos_set1, sensors_depart_set1, mc_set_list1 = self._optimal_deployment(num_depot)
+            num_mc_set1 = len(mc_set_list1)
             if num_mc_set1 < 0:
                 continue
-
-            if num_mc_set - num_mc_set1 < thre:
+            
+            '''
+            if num_mc_set - num_mc_set1 >= thre: #一个depot换超过 thre 个MC
                 print("************************************************************")
-                print("K:",len(depot_pos_set))
-                print("depot_pos_set:",depot_pos_set)
-                print("sensors_depart_set",sensors_depart_set)
-                print("num_mc_set",num_mc_set)
+                print("K:",len(depot_pos_set1))
+                #print("depot_pos_set:",depot_pos_set)
+                #print("sensors_depart_set",sensors_depart_set)
+                print("mc_lsit",mc_set_list1)
+                print("num_mc_set",num_mc_set1)
 
                 #return depot_pos_set, sensors_depart_set, num_mc_set
-
+            '''
+            # 目前先不考虑最优depot个数，先看看这个算法根据不同个k得出的结果：       
+            print("************************************************************")
+            print("set depot num = ",num_depot)
+            print("K:",len(depot_pos_set1))
+            #print("depot_pos_set:",depot_pos_set)
+            #print("sensors_depart_set",sensors_depart_set)
+            print("mc_lsit",mc_set_list1)
+            print("num_mc_set",num_mc_set1)
+            
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
-        print("************************************************************")
-        print("K:",len(depot_pos_set))
-        print("depot_pos_set:",depot_pos_set)
-        print("sensors_depart_set",sensors_depart_set)
-        print("num_mc_set",num_mc_set)
+       
 
     def Unused_optimal_deployment(self, num_depot):
         '''
@@ -182,12 +189,15 @@ class WRSNEnv(object):
             if len(area) != 0:
                 area_list.append(area)
                 DL_list.append(DL[index])
-                
+        self.showClusterResult(area_list,num_depot)
+        Dprint("191 *** is ok! cluster ok!")        
         num_list = self.algorithm_5(DL_list, area_list)
+        
+        #print(num_list)
        
-        total_MC_nums = sum(num_list)
+        #total_MC_nums = sum(num_list)
     
-        return DL_list, area_list, total_MC_nums
+        return DL_list, area_list, num_list
 
     '''
     Algm5: min_dispatch
@@ -209,7 +219,8 @@ class WRSNEnv(object):
     
     
     '''
-        我觉得需要定义一个节点类吧，不如搞index真的麻烦？
+        我觉得需要定义一个节点类吧，不然搞index真的麻烦？
+        
     '''  
     def calculate_center_axi(self,K,A):
         '''
@@ -247,7 +258,22 @@ class WRSNEnv(object):
             ans += self.charge_power_for_node(i)
         
         return ans
-            
+    
+
+    def getClusterCentre(self, cluster):
+        if(len(cluster) == 0):
+            return []
+        
+        x = 0.0
+        y = 0.0
+        cluster_nodes = [self.loc_nodes[node_id]  for node_id in cluster]
+        for node in cluster_nodes:
+            x += node[0]
+            y += node[1]
+        x = x/len(node)
+        y = y/len(node)
+        
+        return np.array([x,y])
         
     def argmin_i(self,e,DL):
         '''
@@ -261,9 +287,63 @@ class WRSNEnv(object):
         dist_i.sort()
         
         return [i for _,i in dist_i]
+    
+    
+    def showClusterResult(self,clusterSets,K):
+        plt.figure()
+        x_list = [nodes[0]  for nodes in self.loc_nodes]
+        y_list = [nodes[1]  for nodes in self.loc_nodes]
+        plt.plot(x_list, y_list, 'o')
+        Colors = [val  for key,val in myUtil.cnames.items()]
+        for index, cluster in enumerate(clusterSets):
+            x_temp = [self.loc_nodes[i][0] for i in cluster]
+            y_temp = [self.loc_nodes[i][1] for i in cluster]
+            plt.plot(x_temp, y_temp, 'o', color=Colors[index+10])
+        plt.xlabel("clusters nums="+str(len(clusterSets)))
+        #plt.legend()
+        plt.show()
         
+        pass
+    
+    def processNullCluster(self,clusterSets, K, centres):
+        '''
+            用于处理聚类过程中某一类为空的情况
+            哎，发现个坑: 我们使用的节点竟然是节点的id!!!不是坐标啊！！！好麻烦啊！
         
-    def area_depart(self,K, U, err0 = 10,loc_nodes = None):
+        '''
+        def getDist(pointA, pointB):
+            #print("2877777777777*****",pointA,pointB)
+            return ((pointA[0]-pointB[0])**2 + (pointA[1]-pointB[1])**2)**0.5
+        
+        for cluster_id, cluster in enumerate(clusterSets):         
+            if len(cluster) == 0:
+                ## 从其他类选出一个最远的来，而且不能使得原本的类为空，所以要对距离加权
+                select_cluster_id = -1
+                d_furthest = -1
+                select_point_id = -1
+                for index, clu in enumerate(clusterSets):
+                    if(len(clu) > 1):
+                        ## 寻找该cluster中离该聚类中心最远的点，保留它的距离和下标
+                        dmax = -1
+                        imax = -1
+                        cent = centres[index]
+                        for i,point in enumerate(clu):
+                            if getDist(self.loc_nodes[point],cent)>dmax:
+                                dmax = getDist(self.loc_nodes[point],cent)
+                                imax = i
+                        if d_furthest < dmax:
+                            d_furthest = dmax
+                            select_cluster_id = index
+                            select_point_id = imax
+                
+                clusterSets[cluster_id].append(clusterSets[select_cluster_id][select_point_id])
+                del clusterSets[select_cluster_id][select_point_id]
+                
+                centres[select_cluster_id] = self.getClusterCentre(clusterSets[select_cluster_id])
+                centres[cluster_id] = self.getClusterCentre(clusterSets[cluster_id])
+        #return clusterSets
+        
+    def area_depart(self,K, U, err0 = 1e-2,loc_nodes = None, epoch0 = 1000):
         '''
         By shuitang:
         args:
@@ -294,7 +374,7 @@ class WRSNEnv(object):
         DL = self.calculate_center_axi(K,A)
         
         epoch = 0
-        while epoch < 100:
+        while epoch < epoch0:
             A1 = A+[]
             A = [[] for i in range(K)]
             
@@ -309,10 +389,20 @@ class WRSNEnv(object):
                         break
                     
             #A_axi = [self.loc_nodes[i] for i in A]
+            
+            ## 处理空聚类
+            ## 采取的措施是：选取其他类中选取一个距离它们自身中心最远的点加入到该集合中，目的在于消除方差
+            
+            
+            DL1 = self.calculate_center_axi(K,A)
+            self.processNullCluster(A,K,DL1)
+            
             DL1 = self.calculate_center_axi(K,A)
             
-            Dprint(DL1,DL)
             
+            #Dprint(DL1,DL)
+            
+            '''
             ## 聚类会导致某一类为空！！！！
             ## 强行聚类？？？
             diff = 0.0
@@ -322,8 +412,8 @@ class WRSNEnv(object):
                 except:
                     return A,DL
             
-            
-            #diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
+            '''
+            diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
             
             if diff < err0:
                 
@@ -336,7 +426,7 @@ class WRSNEnv(object):
      
         
     def charge_power_for_node(self, node_j_id):
-        return 50
+        return 1.08e4
     #############################加入类里去作函数
     def algorithm_5(self, depot_list, area_list):
         mc_num_list=[]
@@ -427,3 +517,9 @@ class WRSNEnv(object):
             mc_num_list.append(mc_num)
         
         return mc_num_list
+    
+if __name__ == '__main__':
+    
+    wrsn = depots_deployment.WRSNEnv()
+    
+    wrsn.optimal_deployment()
