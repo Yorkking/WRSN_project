@@ -7,7 +7,9 @@ class MC:
     power_consume # 能耗
     v #速度
 class Node:
+    dead_time #死亡时间是指，从MC被派出去时刻为0开始计时的时刻
     axis
+    capacity
     power_consume
     
 
