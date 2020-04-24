@@ -17,7 +17,15 @@ class Area:
     def __init__(self):
         self.MCsets = MCList
         self.NodeSets = NodeList
-
+        ## 这里需要随机初始
+        
+        ## 然后调用充电过程
+        live_rate, eff_rate = self.chargeAlgorithm
+        
+        
+    def chargeAlgorithm:
+    
+        pass
 ```
 初始化传感器的电量（随机50%到100%）
 
