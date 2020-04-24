@@ -1,6 +1,26 @@
+构建一个区域类：
+```python
+class MC:
+    time #时间是指，从MC被派出去时刻为0开始计时的时刻
+    axis #坐标
+    capacity #携带电量
+    power_consume # 能耗
+    v #速度
+class Node:
+    axis
+    power_consume
+    
+
+class Area:
+    def __init__(self):
+        self.MCsets = MCList
+        self.NodeSets = NodeList
+
+```
 初始化传感器的电量（随机50%到100%）
 
 随机一段时间，然后停下，接着观察传感器里有多少传感器的电量下到警戒值。将到了警戒值的传感器的id放入充电传感器队列q（用list）。
+
 
 初始化时间，计算传感器的时间并保存在字典中（字典的键是节点id，字典的值是时间）
 
