@@ -16,10 +16,18 @@
 
 目前的结果如下：
 
-![聚类结果](./image/%E8%81%9A%E7%B1%BB%E7%BB%93%E6%9E%9C.png)
+![result](image/result.png)
 
 
 
 ## 算法性能评估指标
 1. predicted survival rate of sensor nodes (mininum charging duration: charging time of MC + maintainance; if a sensor owns enough energy till the end of mininum charging duration, we say it survives.)
 2. predicted charging utility of MCs (charged_energy / (moving_energy + charged_energy)
+
+
+
+
+
+## 新一轮测试
+
+新添加了`first_test_performance.py`

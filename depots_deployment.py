@@ -114,7 +114,7 @@ class WRSNEnv(object):
     def optimal_deployment(self, thre=3):
         ''' Return the optimal deployment of depots and MCs. '''
 
-        num_depot = 3
+        num_depot = 1
         depot_pos_set, sensors_depart_set, num_set_list = self._optimal_deployment(num_depot)
         num_mc_set = len(num_set_list)
         
@@ -137,14 +137,14 @@ class WRSNEnv(object):
                 #return depot_pos_set, sensors_depart_set, num_mc_set
             '''
             # 目前先不考虑最优depot个数，先看看这个算法根据不同个k得出的结果：       
-            print("************************************************************")
+            #print("************************************************************")
             print("set depot num = ",num_depot)
             print("K:",len(depot_pos_set1))
             #print("depot_pos_set:",depot_pos_set)
             #print("sensors_depart_set",sensors_depart_set)
             print("mc_lsit",mc_set_list1)
             print("num_mc_set",num_mc_set1)
-            
+            print("************************************************************")
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
        
 
@@ -189,7 +189,7 @@ class WRSNEnv(object):
             if len(area) != 0:
                 area_list.append(area)
                 DL_list.append(DL[index])
-        self.showClusterResult(area_list,num_depot)
+        self.showClusterResult(area_list,num_depot,DL_list)
         Dprint("191 *** is ok! cluster ok!")        
         num_list = self.algorithm_5(DL_list, area_list)
         
@@ -285,7 +285,7 @@ class WRSNEnv(object):
         return [i for _,i in dist_i]
     
     
-    def showClusterResult(self,clusterSets,K):
+    def showClusterResult(self,clusterSets,K,centres):
         plt.figure()
         x_list = [nodes[0]  for nodes in self.loc_nodes]
         y_list = [nodes[1]  for nodes in self.loc_nodes]
@@ -295,7 +295,8 @@ class WRSNEnv(object):
         for index, cluster in enumerate(clusterSets):
             x_temp = [self.loc_nodes[i][0] for i in cluster]
             y_temp = [self.loc_nodes[i][1] for i in cluster]
-            plt.plot(x_temp, y_temp, 'o', color=Colors[10*cnt])
+            plt.plot(x_temp, y_temp, 'o', color=Colors[7*cnt+10])
+            plt.plot(centres[index][0],centres[index][1],'+',color=Colors[7*cnt+10])
             cnt +=  1
         plt.xlabel("clusters nums="+str(len(clusterSets)))
         #plt.legend()
@@ -341,7 +342,7 @@ class WRSNEnv(object):
                 centres[cluster_id] = self.getClusterCentre(clusterSets[cluster_id])
         #return clusterSets
         
-    def area_depart(self,K, U, err0 = 1e-2,loc_nodes = None, epoch0 = 1000):
+    def area_depart(self,K, U, err0 = 1e-2,loc_nodes = None, epoch0 = 2000):
         '''
         By shuitang:
         args:
@@ -357,8 +358,6 @@ class WRSNEnv(object):
             self.loc_nodes: 传感器的位置列表
             
         '''
-        
-       
         if loc_nodes is None:
             loc_nodes = self.loc_nodes
         
@@ -378,12 +377,14 @@ class WRSNEnv(object):
             
             for index,e in enumerate(loc_nodes):
                 j_list = self.argmin_i(e,DL)
+                
+                ## 感觉这里限制负载均衡的话，应该这样做：如果某一cluster超出的话，应该先把该cluster最大的替换出去
                 for index1,j in enumerate(j_list):
                     if self.energy_consume(A[j]+[index]) <= U:
                         A[j].append(index)
                         break
                     elif index1 == len(j_list)-1:
-                        A[j].append(index)
+                        A[j_list[0]].append(index)
                         break
                     
             #A_axi = [self.loc_nodes[i] for i in A]           
@@ -402,8 +403,7 @@ class WRSNEnv(object):
                 try:
                     diff +=  sum((d1-d2)**2)
                 except:
-                    return A,DL
-            
+                    return A,DL            
             '''
             diff = np.sum([ sum((d1-d2)**2) for d1,d2 in zip(DL,DL1)])/len(DL)
             if diff < err0:    
