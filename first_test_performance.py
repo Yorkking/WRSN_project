@@ -15,6 +15,10 @@ class MC(object):
         self.v = _v
         self.charge_rate = _charge_rate
         self.full_power = _full_power
+        
+        
+        #new code
+        self.travel_cons_rate = travel_cons_rate
 
 class Node(object):
     def __init__(self,_dead_time,_axis,_left_power, _power_consume,_full_power,depot_site):
@@ -24,6 +28,11 @@ class Node(object):
         self.power_consume = _power_consume
         self.full_power = _full_power
         self.depot_site
+        
+    #new code
+    def power_need_charge(self, time):
+        #这里的time是MC充完电后的时刻，之所以这样是因为假定初始时间为0
+        return self.full_power - self.left_power - self.power_consume * time
 
 class Area(object):
     def __init__(self,MCList, NodeList):
@@ -52,10 +61,60 @@ class Area(object):
         
         ## 剔除那些无法救活的节点
         ## Your codes are here
-        for index,node in enumerate(chargeList):
-            pass
+        node_dead_num = 0
         
+        charge_node_num=len(chargeList)
+        counter=0
+        mc=MC()
+        while counter<charge_node_num:
+            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[counter])
+            
+            if not ok:#如果该节点无法救活
+                del chargeList[counter]#删除该节点
+                charge_node_num-=1
+                node_dead_num += 1
+            else:
+                counter+=1
+                
+        #开始为充电请求队列安排MC进行充电
+        mc_num = 0
+        travel_power=0
+        charge_power=0
         
+        while len(chargeList)!=0 or mc_num<self.MCnum:
+            #选择距离当前MC最近的节点
+            choose_node_index=0
+            choose_node_dist=dist(mc.axis, chargeList[0].axis)
+            
+            for i in range(1, len(chargeList) ):
+                i_dist = dist(mc.axis, chargeList[i].axis)
+                if choose_node_dist > i_dist:
+                    choose_node_index = i
+                    choose_node_dist = i_dist
+            
+            #判断当前MC是否可以为最近的节点充电
+            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ])
+            
+            if ok:
+                #更新
+                mc = MC_temp
+                travel_power += choose_node_dist * mc.travel_cons_rate
+                charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
+                chargeList[ choose_node_index ] = node_temp
+                del chargeList[ choose_node_index ]
+            else:
+                #开始一个新的巡回
+                mc_num+=1
+                mc=MC()
+        
+        #计算存活率
+        node_dead_num += len(chargeList)
+        node_num = len( self.NodeList )
+        live_rate = (node_num-node_dead_num)/node_num
+        
+        #计算充电效率
+        eff_rate = charge_power / (charge_power + travel_power)
+
         return live_rate, eff_rate
     
     def charge_is_ok(self, MC, node):
