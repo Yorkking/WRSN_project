@@ -26,6 +26,10 @@ class Area:
     def chargeAlgorithm:
     
         pass
+ 
+ if __name__ == "__main__":
+    area=Area()
+    print( area.chargeAlgorithm() )
 ```
 初始化传感器的电量（随机50%到100%）
 
