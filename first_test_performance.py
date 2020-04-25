@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri Apr 24 19:52:51 2020
-
 @author: York_king
 """
 import numpy as np
@@ -32,7 +31,7 @@ class Node(object):
     #new code
     def power_need_charge(self, time):
         #这里的time是MC充完电后的时刻，之所以这样是因为假定初始时间为0
-        return self.full_power - self.left_power - self.power_consume * time
+        return self.full_power - self.left_power + self.power_consume * time
 
 class Area(object):
     def __init__(self,MCList, NodeList,_depot_site):
@@ -66,7 +65,7 @@ class Area(object):
         
         charge_node_num=len(chargeList)
         counter=0
-        mc=MC()
+        mc=self.MCsets[0]
         while counter<charge_node_num:
             ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[counter])
             
@@ -82,7 +81,9 @@ class Area(object):
         travel_power=0
         charge_power=0
         
-        while len(chargeList)!=0 or mc_num<self.MCnum:
+        MCnum=len( self.MCsets )
+        
+        while len(chargeList)>=1 and mc_num<MCnum:
             #选择距离当前MC最近的节点
             choose_node_index=0
             choose_node_dist=self.getDist(mc.axis, chargeList[0].axis)
@@ -99,6 +100,18 @@ class Area(object):
             if ok:
                 #更新
                 mc = MC_temp
+                
+                print('aaa')
+                print( choose_node_dist )
+                print( mc.power_consume )
+                
+                print( chargeList[ choose_node_index ].full_power )
+                print( chargeList[ choose_node_index ].left_power )
+                print( chargeList[ choose_node_index ].power_consume )
+                print( mc.time )
+                
+                print( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
+                
                 travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
                 chargeList[ choose_node_index ] = node_temp
@@ -106,15 +119,21 @@ class Area(object):
             else:
                 #开始一个新的巡回
                 mc_num+=1
-                mc=MC()
+                mc=self.MCsets[mc_num]
         
         #计算存活率
         node_dead_num += len(chargeList)
-        node_num = len( self.NodeList )
+        node_num = len( self.NodeSets )
         live_rate = (node_num-node_dead_num)/node_num
         
         #计算充电效率
-        eff_rate = charge_power / (charge_power + travel_power)
+        print( charge_power )
+        print( travel_power )
+        
+        if charge_power + travel_power > 0:
+            eff_rate = charge_power / (charge_power + travel_power)
+        else:
+            eff_rate = -1
 
         return live_rate, eff_rate
     
@@ -138,7 +157,7 @@ class Area(object):
         ## MC从当前位置出发去node的时间
         dist = self.getDist(MC.axis, node.axis)
         time_to = dist/MC.v
-        if time_to + MC.time > node.deadtime:
+        if time_to + MC.time > node.dead_time:
             return False,None,None
         ## 去的能量消耗
         MC_travel_power = time_to * MC.power_consume
@@ -203,12 +222,3 @@ if __name__ == '__main__':
     area = Area(MCList,NodeList,depot_site)
     
     print(area.chargeAlgorithm())
-    
-    
-    
-    
-    
-    
-    
-    
-    
