@@ -21,12 +21,14 @@ if __name__ == '__main__':
            mc_nums = result['mc_nums']
            depot_pos_set = result['depot_pos_set']
            sensors_depart_set = result['sensors_depart_set']
+           num_mc_set = result['num_mc_set']
     except:
     
         wrsn = depots_deployment.WRSNEnv()
         
         mc_nums, depot_pos_set, num_mc_set, sensors_depart_set = wrsn.optimal_deployment()
-        result = {'mc_nums':mc_nums, 'depot_pos_set':depot_pos_set, 'sensors_depart_set':sensors_depart_set}
+        result = {'mc_nums':mc_nums, 'depot_pos_set':depot_pos_set, \
+                  'sensors_depart_set':sensors_depart_set, 'num_mc_set':num_mc_set}
         with open('./data/first_algorithm.data','w') as f:
             f.write(str(result))
     
