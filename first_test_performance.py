@@ -200,7 +200,7 @@ if __name__ == '__main__':
         
         
         
-    area = Area(MCList,NodeList)
+    area = Area(MCList,NodeList,depot_site)
     
     print(area.chargeAlgorithm())
     
