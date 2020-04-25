@@ -7,7 +7,7 @@ Created on Fri Apr 24 19:52:51 2020
 import numpy as np
 
 class MC(object):
-    def __init__(self,_time, _axis,_left_power, _power_consume, _v,_charge_rate,_full_power):
+    def __init__(self, _axis,_full_power,_left_power, _power_consume, _v,_charge_rate,_time=0.0):
         self.time = _time
         self.axis = _axis
         self.power_consume = _power_consume
@@ -18,16 +18,16 @@ class MC(object):
         
         
         #new code
-        self.travel_cons_rate = travel_cons_rate
+        #self.travel_cons_rate = _travel_cons_rate
 
 class Node(object):
-    def __init__(self,_dead_time,_axis,_left_power, _power_consume,_full_power,depot_site):
+    def __init__(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
         self.dead_time = _dead_time
         self.axis = _axis
         self.left_power = _left_power
         self.power_consume = _power_consume
         self.full_power = _full_power
-        self.depot_site
+        
         
     #new code
     def power_need_charge(self, time):
@@ -35,10 +35,11 @@ class Node(object):
         return self.full_power - self.left_power - self.power_consume * time
 
 class Area(object):
-    def __init__(self,MCList, NodeList):
+    def __init__(self,MCList, NodeList,_depot_site):
         self.MCsets = MCList
         self.NodeSets = NodeList
         self.ask_charge_thre = 0.3
+        self.depot_site = _depot_site
         
     def getDist(self,axis1,axis2):
         return ((axis1[0]-axis2[0])**2 + (axis1[1]-axis2[1])**2)**0.5
@@ -84,10 +85,10 @@ class Area(object):
         while len(chargeList)!=0 or mc_num<self.MCnum:
             #选择距离当前MC最近的节点
             choose_node_index=0
-            choose_node_dist=dist(mc.axis, chargeList[0].axis)
+            choose_node_dist=self.getDist(mc.axis, chargeList[0].axis)
             
             for i in range(1, len(chargeList) ):
-                i_dist = dist(mc.axis, chargeList[i].axis)
+                i_dist = self.getDist(mc.axis, chargeList[i].axis)
                 if choose_node_dist > i_dist:
                     choose_node_index = i
                     choose_node_dist = i_dist
@@ -98,7 +99,7 @@ class Area(object):
             if ok:
                 #更新
                 mc = MC_temp
-                travel_power += choose_node_dist * mc.travel_cons_rate
+                travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
                 chargeList[ choose_node_index ] = node_temp
                 del chargeList[ choose_node_index ]
@@ -168,22 +169,37 @@ class Area(object):
         return True, MC, node
         
         
-        
-        
-        
-        
-        
+            
         
 if __name__ == '__main__':
-    
     
     ## 这部分的初始化得利用之前我们聚类等算法的结果，先不初始化
     ## todo by shuitang
     ## 初始化MCList
+    MC_nums = 10
+    depot_site = np.array([200,200])
     MCList = []
-    ## 初始化传感器节点
-    NodeList = []
+    for i in range(MC_nums):
+        #def __init__(self, _axis,_full_power,_left_power, _power_consume, _v,_charge_rate,_time=0.0):
+        mc = MC(depot_site,1e6,1e6,50,1,5)
+        MCList.append(mc)
     
+    ## 初始化传感器节点
+    node_nums = 100
+    NodeList = []
+    #(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
+    edge_size = 400
+    for i in range(node_nums):
+        axis = np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)
+        rate = np.random.uniform(0.15,0.8)
+        power_consume = 50
+        node = Node(axis,1.08e4,rate*1.08e4,power_consume)
+        NodeList.append(node)
+    
+    ## 随机运行一段时间？？？其实和之
+        
+        
+        
     area = Area(MCList,NodeList)
     
     print(area.chargeAlgorithm())
