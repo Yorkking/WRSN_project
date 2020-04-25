@@ -71,14 +71,14 @@ def get_span_tree_and_leaves( node_list ):
 
 class WRSNEnv(object):
     def __init__(self):
-        node_nums = 100
+        node_nums = 1000
         edge_size = 1e5
         self.loc_nodes = [ np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)  for _ in range(node_nums)]
         self.node_nums = node_nums
         
         self.capacity_mc = 1e6
 
-        self.move_power = 1
+        self.move_power = 2
     
     def Unused__init__(self, **kwargs):
         '''
@@ -113,10 +113,30 @@ class WRSNEnv(object):
 
     def optimal_deployment(self, thre=3):
         ''' Return the optimal deployment of depots and MCs. '''
-
+        
+        ans_mc_nums = 0xfffff
+        ans_depot_pos_set = []
+        ans_num_mc_set = []
+        ans_sensors_depart_set = []
+        
+        
         num_depot = 1
-        depot_pos_set, sensors_depart_set, num_set_list = self._optimal_deployment(num_depot)
-        num_mc_set = len(num_set_list)
+        depot_pos_set, sensors_depart_set, mc_set_list = self._optimal_deployment(num_depot)
+        num_mc_set = len(mc_set_list)
+        print("set depot num = ",num_depot)
+        print("K:",len(depot_pos_set))
+        #print("depot_pos_set:",depot_pos_set)
+        #print("sensors_depart_set",sensors_depart_set)
+        print("mc_lsit",mc_set_list)
+        print("num_mc_set",num_mc_set)
+        print("************************************************************")
+        
+        if sum(mc_set_list) <= ans_mc_nums:
+            ans_mc_nums = sum(mc_set_list)
+            ans_depot_pos_set = depot_pos_set
+            ans_num_mc_set = mc_set_list
+            ans_sensors_depart_set = sensors_depart_set
+        
         
         while num_depot < min(self.node_nums,10):
             num_depot += 1
@@ -146,7 +166,15 @@ class WRSNEnv(object):
             print("num_mc_set",num_mc_set1)
             print("************************************************************")
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
+            mc_set_list = mc_set_list1
+            if sum(mc_set_list) <= ans_mc_nums:
+                ans_mc_nums = sum(mc_set_list)
+                ans_depot_pos_set = depot_pos_set
+                ans_num_mc_set = mc_set_list
+                ans_sensors_depart_set = sensors_depart_set
+            
        
+        return ans_mc_nums, ans_depot_pos_set, ans_num_mc_set, ans_sensors_depart_set
 
     def Unused_optimal_deployment(self, num_depot):
         '''
@@ -190,7 +218,7 @@ class WRSNEnv(object):
                 area_list.append(area)
                 DL_list.append(DL[index])
         self.showClusterResult(area_list,num_depot,DL_list)
-        Dprint("191 *** is ok! cluster ok!")        
+        #Dprint("191 *** is ok! cluster ok!")        
         num_list = self.algorithm_5(DL_list, area_list)
         
         #print(num_list)
@@ -380,7 +408,7 @@ class WRSNEnv(object):
                 
                 ## 感觉这里限制负载均衡的话，应该这样做：如果某一cluster超出的话，应该先把该cluster最大的替换出去
                 for index1,j in enumerate(j_list):
-                    if self.energy_consume(A[j]+[index]) <= U:
+                    if self.energy_consume(A[j]+[index]) <= 1000*U:
                         A[j].append(index)
                         break
                     elif index1 == len(j_list)-1:

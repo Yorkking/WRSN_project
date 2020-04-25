@@ -4,9 +4,10 @@ Created on Fri Apr 24 19:52:51 2020
 @author: York_king
 """
 import numpy as np
-
+from myUtil import Dprint 
 class MC(object):
-    def __init__(self, _axis,_full_power,_left_power, _power_consume, _v,_charge_rate,_time=0.0):
+    #1e6,1e6,50,1,5
+    def __init__(self, _axis, _full_power=1e6, _left_power=1e6, _power_consume=50,  _v=1 ,_charge_rate=5 ,_time=0.0):
         self.time = _time
         self.axis = _axis
         self.power_consume = _power_consume
@@ -76,6 +77,7 @@ class Area(object):
             else:
                 counter+=1
                 
+        Dprint("chargeList",chargeList)
         #开始为充电请求队列安排MC进行充电
         mc_num = 0
         travel_power=0
@@ -101,16 +103,18 @@ class Area(object):
                 #更新
                 mc = MC_temp
                 
-                print('aaa')
-                print( choose_node_dist )
-                print( mc.power_consume )
+                '''
+                Dprint('aaa')
+                Dprint( choose_node_dist )
+                Dprint( mc.power_consume )
                 
-                print( chargeList[ choose_node_index ].full_power )
-                print( chargeList[ choose_node_index ].left_power )
-                print( chargeList[ choose_node_index ].power_consume )
-                print( mc.time )
+                Dprint( chargeList[ choose_node_index ].full_power )
+                Dprint( chargeList[ choose_node_index ].left_power )
+                Dprint( chargeList[ choose_node_index ].power_consume )
+                Dprint( mc.time )
                 
-                print( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
+                Dprint( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
+                '''
                 
                 travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
@@ -127,8 +131,10 @@ class Area(object):
         live_rate = (node_num-node_dead_num)/node_num
         
         #计算充电效率
-        print( charge_power )
-        print( travel_power )
+        '''
+        Dprint( charge_power )
+        Dprint( travel_power )
+        '''
         
         if charge_power + travel_power > 0:
             eff_rate = charge_power / (charge_power + travel_power)
@@ -207,7 +213,7 @@ if __name__ == '__main__':
     node_nums = 100
     NodeList = []
     #(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
-    edge_size = 400
+    edge_size = 300
     for i in range(node_nums):
         axis = np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)
         rate = np.random.uniform(0.15,0.8)
@@ -217,8 +223,6 @@ if __name__ == '__main__':
     
     ## 随机运行一段时间？？？其实和之
         
-        
-        
     area = Area(MCList,NodeList,depot_site)
     
-    print(area.chargeAlgorithm())
+    print("live rate, efficiency rate: ", area.chargeAlgorithm())
