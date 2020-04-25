@@ -77,7 +77,7 @@ class Area(object):
             else:
                 counter+=1
                 
-        Dprint("chargeList",chargeList)
+        #Dprint("chargeList",chargeList)
         #开始为充电请求队列安排MC进行充电
         mc_num = 0
         travel_power=0
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     for i in range(node_nums):
         axis = np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)
         rate = np.random.uniform(0.15,0.8)
-        power_consume = 50
+        power_consume = np.random.uniform(1e-3,1e-2)
         node = Node(axis,1.08e4,rate*1.08e4,power_consume)
         NodeList.append(node)
     

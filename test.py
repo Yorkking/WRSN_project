@@ -51,12 +51,12 @@ if __name__ == '__main__':
             axis = wrsn.loc_nodes[sensors_depart_set[index][i]]
             #Dprint(axis)
             rate = np.random.uniform(0.15,0.8)
-            power_consume = 50
+            power_consume = np.random.uniform(1e-3,1e-2)
             node = fp.Node(axis,1.08e4,rate*1.08e4,power_consume)
             NodeList.append(node)
             
         area = fp.Area(MCList,NodeList,depot_site)
         live_rate, eff_rate = area.chargeAlgorithm()
         
-        print("live rate",live_rate,"efficiency rate:", eff_rate)
+        print("live rate",live_rate,"efficiency rate:", eff_rate*100,'%')
         
