@@ -12,8 +12,9 @@ from myUtil import Dprint
 
 if __name__ == '__main__':
     
-    
+    wrsn = depots_deployment.WRSNEnv()
     try:
+        
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -24,7 +25,7 @@ if __name__ == '__main__':
            num_mc_set = result['num_mc_set']
     except:
     
-        wrsn = depots_deployment.WRSNEnv()
+        
         
         mc_nums, depot_pos_set, num_mc_set, sensors_depart_set = wrsn.optimal_deployment()
         result = {'mc_nums':mc_nums, 'depot_pos_set':depot_pos_set, \
@@ -56,7 +57,7 @@ if __name__ == '__main__':
             NodeList.append(node)
             
         area = fp.Area(MCList,NodeList,depot_site)
-        live_rate, eff_rate = area.chargeAlgorithm()
+        successful_charging_rate, eff_rate = area.chargeAlgorithm()
         
-        print("live rate",live_rate,"efficiency rate:", eff_rate*100,'%')
+        print("live rate",successful_charging_rate,"efficiency rate:", eff_rate)
         

@@ -27,13 +27,19 @@ class Node(object):
         self.left_power = _left_power
         self.power_consume = _power_consume
         self.full_power = _full_power
-        
-        
+    def __str__(self):
+        return "Object Node:\n" \
+            + "{\ndead_time: "+str(self.dead_time)+"\n" \
+            + "axis: "+str(self.axis) + "\n" \
+            + "left_power: "+(str(self.left_power)) + "\n" \
+            + "power_consume: " + str(self.power_consume) + "\n" \
+            + "}"
     #new code
     def power_need_charge(self, time):
         #这里的time是MC充完电后的时刻，之所以这样是因为假定初始时间为0
         return self.full_power - self.left_power + self.power_consume * time
-
+    __repr__ = __str__
+        
 class Area(object):
     def __init__(self,MCList, NodeList,_depot_site):
         self.MCsets = MCList
@@ -60,6 +66,7 @@ class Area(object):
             if node.left_power <= 0.3*node.full_power:
                 chargeList.append(node)
         
+        Dprint("chargeList1",len(chargeList))
         ## 剔除那些无法救活的节点
         ## Your codes are here
         node_dead_num = 0
@@ -77,7 +84,7 @@ class Area(object):
             else:
                 counter+=1
                 
-        #Dprint("chargeList",chargeList)
+        Dprint("chargeList2",chargeList)
         #开始为充电请求队列安排MC进行充电
         mc_num = 0
         travel_power=0
@@ -131,6 +138,7 @@ class Area(object):
         live_rate = (node_num-node_dead_num)/node_num
         
         #计算充电效率
+        Dprint("mc",mc_num)
         '''
         Dprint( charge_power )
         Dprint( travel_power )
@@ -162,6 +170,7 @@ class Area(object):
         
         ## MC从当前位置出发去node的时间
         dist = self.getDist(MC.axis, node.axis)
+        Dprint("dist",dist)
         time_to = dist/MC.v
         if time_to + MC.time > node.dead_time:
             return False,None,None
@@ -216,7 +225,7 @@ if __name__ == '__main__':
     edge_size = 300
     for i in range(node_nums):
         axis = np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)
-        rate = np.random.uniform(0.15,0.8)
+        rate = np.random.uniform(0.3,0.8)
         power_consume = np.random.uniform(1e-3,1e-2)
         node = Node(axis,1.08e4,rate*1.08e4,power_consume)
         NodeList.append(node)

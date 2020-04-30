@@ -1,3 +1,4 @@
+#coding:utf-8
 import numpy as np
 import copy
 from myUtil import Dprint
@@ -71,8 +72,8 @@ def get_span_tree_and_leaves( node_list ):
 
 class WRSNEnv(object):
     def __init__(self):
-        node_nums = 1000
-        edge_size = 1e5
+        node_nums = 100
+        edge_size = 1e3
         self.loc_nodes = [ np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)  for _ in range(node_nums)]
         self.node_nums = node_nums
         
