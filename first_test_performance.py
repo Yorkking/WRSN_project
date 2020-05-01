@@ -50,10 +50,16 @@ class Area(object):
     def getDist(self,axis1,axis2):
         return ((axis1[0]-axis2[0])**2 + (axis1[1]-axis2[1])**2)**0.5
     
-    def chargeAlgorithm(self):
+    def get_priority_value(self, node, mc, choose_way):
+        #得到节点关于MC的优先值（用于选择充电节点）
+        if choose_way=='dist':
+            return self.getDist(mc.axis, node.axis)
+        elif choose_way=='electricity':
+            return node.left_power
         
-        ## 存活率，充电效率
-        live_rate, eff_rate = 0.0, 0.0
+    
+    def chargeAlgorithm(self, choose_way):
+        
         
         ## 设置NodeSets的死亡时间
         for index,node in enumerate(self.NodeSets):
@@ -95,13 +101,15 @@ class Area(object):
         while len(chargeList)>=1 and mc_num<MCnum:
             #选择距离当前MC最近的节点
             choose_node_index=0
-            choose_node_dist=self.getDist(mc.axis, chargeList[0].axis)
+            
+            #选中节点的优先值
+            choose_node_priority = self.get_priority_value( chargeList[0], mc, choose_way)
             
             for i in range(1, len(chargeList) ):
-                i_dist = self.getDist(mc.axis, chargeList[i].axis)
-                if choose_node_dist > i_dist:
+                i_priority = self.get_priority_value( chargeList[i], mc, choose_way)
+                if choose_node_priority > i_priority:#比较节点之间的优先值
                     choose_node_index = i
-                    choose_node_dist = i_dist
+                    choose_node_priority = i_priority
             
             #判断当前MC是否可以为最近的节点充电
             ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ])
@@ -122,6 +130,8 @@ class Area(object):
                 
                 Dprint( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
                 '''
+                #计算选中节点的距离
+                choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ].axis)
                 
                 travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
@@ -132,24 +142,19 @@ class Area(object):
                 mc_num+=1
                 mc=self.MCsets[mc_num]
         
-        #计算存活率
+        #计算死亡节点
         node_dead_num += len(chargeList)
+        #计算存活节点
         node_num = len( self.NodeSets )
-        live_rate = (node_num-node_dead_num)/node_num
+        node_lived_num = node_num-node_dead_num
         
-        #计算充电效率
         Dprint("mc",mc_num)
         '''
         Dprint( charge_power )
         Dprint( travel_power )
         '''
-        
-        if charge_power + travel_power > 0:
-            eff_rate = charge_power / (charge_power + travel_power)
-        else:
-            eff_rate = -1
 
-        return live_rate, eff_rate
+        return node_dead_num, node_lived_num, charge_power, travel_power
     
     def charge_is_ok(self, MC, node):
         '''
@@ -234,4 +239,5 @@ if __name__ == '__main__':
         
     area = Area(MCList,NodeList,depot_site)
     
-    print("live rate, efficiency rate: ", area.chargeAlgorithm())
+    print("electricity node_dead_num, node_lived_num, charge_power, travel_power: ", area.chargeAlgorithm('electricity'))
+    print("dist node_dead_num, node_lived_num, charge_power, travel_power: ", area.chargeAlgorithm('dist'))
