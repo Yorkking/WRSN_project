@@ -8,8 +8,9 @@ import numpy as np
 import depots_deployment
 import first_test_performance as fp
 from myUtil import Dprint
+import os
 #import json
-
+np.random.seed(0)
 if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
@@ -33,7 +34,7 @@ if __name__ == '__main__':
         with open('./data/first_algorithm.data','w') as f:
             f.write(str(result))
     
-    
+    cycle = 60
     for index in range(len(depot_pos_set)):
         
         depot_site = depot_pos_set[index]
@@ -56,8 +57,47 @@ if __name__ == '__main__':
             node = fp.Node(axis,1.08e4,rate*1.08e4,power_consume)
             NodeList.append(node)
             
-        area = fp.Area(MCList,NodeList,depot_site)
-        successful_charging_rate, eff_rate = area.chargeAlgorithm()
         
-        print("live rate",successful_charging_rate,"efficiency rate:", eff_rate)
+            
+            
+        area = fp.Area(MCList,NodeList,depot_site)
+        
+        for c_num in range(10):
+            print("depot_pos_set_index:%d"%index)
+            print("the %d rounds"%(c_num))
+            charge_sum_before = 0
+            # print(MCList[0].)
+            total_sum = len(area.NodeSets)*area.NodeSets[0].full_power
+            for i in area.NodeSets:
+                charge_sum_before += i.left_power
+            node_dead_num, node_lived_num, charge_power, travel_power= area.chargeAlgorithm('dist')
+            
+            
+            charge_sum_after = 0
+            for i in area.NodeSets:
+                
+                charge_sum_after += i.left_power
+            
+            
+            print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
+            print("charge_power:",charge_power,"travel_power:",travel_power)
+            if charge_power+travel_power == 0:
+                eff_rate = 1
+            else:
+                eff_rate =  charge_power/(charge_power+travel_power)
+            print("efficiency rate:", eff_rate)
+            print("charge_sum_before_precent:",charge_sum_before/total_sum)
+            print("charge_sum_after_precent:",charge_sum_after/total_sum)
+            print("-------------------------------------------------\n")
+            
+            
+            for i in area.NodeSets:
+                i.left_power-=i.power_consume*cycle
+            for i in area.MCsets:
+                if i.cycle<=0:
+                    i.cycle+=cycle
+                else:
+                    i.cycle=cycle
+            input("Press enter to continue")
+        
         
