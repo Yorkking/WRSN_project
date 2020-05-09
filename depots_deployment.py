@@ -168,7 +168,7 @@ class WRSNEnv(object):
             print("************************************************************")
             depot_pos_set, sensors_depart_set, num_mc_set = depot_pos_set1, sensors_depart_set1, num_mc_set1
             mc_set_list = mc_set_list1
-            if sum(mc_set_list) <= ans_mc_nums:
+            if sum(mc_set_list) < ans_mc_nums:
                 ans_mc_nums = sum(mc_set_list)
                 ans_depot_pos_set = depot_pos_set
                 ans_num_mc_set = mc_set_list

@@ -14,7 +14,6 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-        
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
