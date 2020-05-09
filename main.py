@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-       a = 1/0
+       #a = 1/0
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -71,6 +71,8 @@ if __name__ == '__main__':
             
             
         area = fp.Area(MCList,NodeList,depot_site)
+        #print("for the "+str(index)+" area")
+        
         epochs = 1000
         for epoch in range(epochs):
             charge_sum_before = 0
@@ -91,6 +93,7 @@ if __name__ == '__main__':
             if charge_power+travel_power == 0:
                 eff_rate = 1
             else:
+                print(area)
                 print("depot_pos_set_index:%d"%index)
                 print("the %d rounds"%(epoch))
                 print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)

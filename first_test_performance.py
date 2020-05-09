@@ -51,7 +51,15 @@ class Area(object):
         self.NodeSets = NodeList
         self.ask_charge_thre = 0.3
         self.depot_site = _depot_site
+    def __str__(self):
+        return "Area object:\n " + \
+        "{\n" + \
+        "depots nums:" + "1" +"\n" + \
+        "MC nums:" + str(len(self.MCsets)) + "\n" + \
+        "node nums:" + str(len(self.NodeSets)) + "\n" + \
+        "}" 
         
+    
     def getDist(self,axis1,axis2):
         return ((axis1[0]-axis2[0])**2 + (axis1[1]-axis2[1])**2)**0.5
     
@@ -277,7 +285,7 @@ class Area(object):
         else:
             return False
         
-        
+    __repr__ = __str__  
             
         
 if __name__ == '__main__':
