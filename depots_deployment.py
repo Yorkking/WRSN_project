@@ -72,6 +72,19 @@ def get_span_tree_and_leaves( node_list ):
 
 class WRSNEnv(object):
     def __init__(self):
+        '''
+        ## 传感器节点的配置
+        node_full_power = 1.08e4
+        rate = np.random.uniform(0.3,0.8)
+        node_left_power = rate*node_full_power # 初始的能量配置为0.3-0.8之间的一个均匀分布
+        node_power_consume = np.random.uniform(1e-3,1e-2) # 传感器消耗的能量在这之间随机分布
+        ## MC的配置
+        MC_full_power = 1e6
+        MC_left_power = MC_full_power
+        MC_power_consume = 50  # 50 J/m or 50 J/s
+        MC_v = 1
+        MC_charge_rate = 5 # 给传感器充电的效率为 5J/s
+        '''
         node_nums = 100
         edge_size = 1e3
         self.loc_nodes = [ np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)  for _ in range(node_nums)]
@@ -79,7 +92,9 @@ class WRSNEnv(object):
         
         self.capacity_mc = 1e6
 
-        self.move_power = 2
+        self.move_power = 50
+        
+        self.node_full_power = 1.08e4
     
     def Unused__init__(self, **kwargs):
         '''
@@ -132,7 +147,7 @@ class WRSNEnv(object):
         print("num_mc_set",num_mc_set)
         print("************************************************************")
         
-        if sum(mc_set_list) <= ans_mc_nums:
+        if sum(mc_set_list) < ans_mc_nums:
             ans_mc_nums = sum(mc_set_list)
             ans_depot_pos_set = depot_pos_set
             ans_num_mc_set = mc_set_list
@@ -444,7 +459,7 @@ class WRSNEnv(object):
      
         
     def charge_power_for_node(self, node_j_id):
-        return 1.08e4
+        return self.node_full_power
     #############################加入类里去作函数
     def algorithm_5(self, depot_list, area_list):
         mc_num_list=[]

@@ -36,9 +36,11 @@ class Node(object):
             + "axis: "+str(self.axis) + "\n" \
             + "left_power: "+(str(self.left_power)) + "\n" \
             + "power_consume: " + str(self.power_consume) + "\n" \
+            + "full_power: " + str(self.full_power) + "\n" \
             + "}"
     #new code
     def power_need_charge(self, time):
+        #print(self.__str__())
         #这里的time是MC充完电后的时刻，之所以这样是因为假定初始时间为0
         return self.full_power - self.left_power + self.power_consume * time
     __repr__ = __str__
@@ -158,7 +160,7 @@ class Area(object):
         mc = MC_temp
         travel_power += travelpower
         charge_power += chargepower
-        
+        #print("16 charge_power:",charge_power)
         #计算死亡节点
         node_dead_num += len(chargeList)
         #计算存活节点
@@ -173,7 +175,7 @@ class Area(object):
         Dprint("travel_power",travel_power)
         return node_dead_num, node_lived_num, charge_power, travel_power
     
-    def charge_is_ok(self, mc, node):
+    def charge_is_ok(self, mc, Node):
         '''
             MC: MC class
             node: Node class
@@ -194,6 +196,7 @@ class Area(object):
         此处mc应该使用深拷贝，否则会导致对原有数据进行改变
         '''
         MC = copy.deepcopy(mc)
+        node = copy.deepcopy(Node)
         ## MC从当前位置出发去node的时间
         dist = self.getDist(MC.axis, node.axis)
         Dprint("dist",dist)
