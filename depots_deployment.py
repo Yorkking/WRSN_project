@@ -85,8 +85,8 @@ class WRSNEnv(object):
         MC_v = 1
         MC_charge_rate = 5 # 给传感器充电的效率为 5J/s
         '''
-        node_nums = 100
-        edge_size = 1e3
+        node_nums = 1000
+        edge_size = 1e4
         self.loc_nodes = [ np.random.uniform(0.0,edge_size, size=(1,2)).reshape(2)  for _ in range(node_nums)]
         self.node_nums = node_nums
         

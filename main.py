@@ -7,6 +7,7 @@ Created on Sat Apr 11 09:40:56 2020
 import numpy as np
 import depots_deployment
 import first_test_performance as fp
+import matplotlib.pyplot as plt
 from myUtil import Dprint
 import os
 #import json
@@ -43,6 +44,19 @@ if __name__ == '__main__':
         with open('./data/first_algorithm.data','w') as f:
             f.write(str(result))
     
+    print("The wrsn struture as follows: ")
+    wrsn.showClusterResult(sensors_depart_set,len(depot_pos_set),depot_pos_set)
+    print("area nums: ",len(depot_pos_set))
+    node_total_nums = sum([len(x) for x in sensors_depart_set])
+    print("node nums: ",node_total_nums)
+    print("mc nums:",mc_nums)
+    print("mc lists:",num_mc_set)
+    #ss = input("----------input any thing to continue------------")
+    
+    
+    
+    # 下面是模拟的过程
+    
     cycle = 60
     for index in range(len(depot_pos_set)):
         
@@ -74,6 +88,8 @@ if __name__ == '__main__':
         #print("for the "+str(index)+" area")
         
         epochs = 1000
+        eff_rate_list = []
+        node_dead_num_list = []
         for epoch in range(epochs):
             charge_sum_before = 0
             # print(MCList[0].)
@@ -89,21 +105,24 @@ if __name__ == '__main__':
                 charge_sum_after += i.left_power
             
             
-           
+            eff_rate = 0.0
             if charge_power+travel_power == 0:
                 eff_rate = 1
             else:
-                print(area)
-                print("depot_pos_set_index:%d"%index)
-                print("the %d rounds"%(epoch))
-                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
-                print("charge_power:",charge_power,"travel_power:",travel_power)
                 eff_rate =  charge_power/(charge_power+travel_power)
-                print("efficiency rate:", eff_rate)
-                print("charge_sum_before_precent:",charge_sum_before/total_sum)
-                print("charge_sum_after_precent:",charge_sum_after/total_sum)
-                print("-------------------------------------------------\n")
-            
+#                print(area)
+#                print("depot_pos_set_index:%d"%index)
+#                print("the %d rounds"%(epoch))
+#                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
+#                print("charge_power:",charge_power,"travel_power:",travel_power)
+#                
+#                print("efficiency rate:", eff_rate)
+#                print("charge_sum_before_precent:",charge_sum_before/total_sum)
+#                print("charge_sum_after_precent:",charge_sum_after/total_sum)
+#                print("-------------------------------------------------\n")
+                
+            eff_rate_list.append(eff_rate)
+            node_dead_num_list.append(node_dead_num/node_nums)
             
             for i in area.NodeSets:
                 i.left_power-=i.power_consume*cycle
@@ -113,5 +132,23 @@ if __name__ == '__main__':
                 else:
                     i.cycle=cycle
           
+        ## 此处增加代码，把每个区域模拟的结果的数据以图像的形式表示出来
+        ## 比如画出死亡率随模拟周期轮数的变化曲线图；充电效率的周期变化曲线
+        epoch_list = [i for i in range(epochs)]
+        plt.figure()
+        plt.plot(epoch_list,eff_rate_list,'g-',label="efficiency")
+        #plt.plot(epoch_list,node_dead_num_list,label="node_dead_rate")
+        plt.legend()
+        plt.xlabel("epoch")
+        plt.ylabel("rate")
+        plt.show()
         
+        plt.figure()
+        #plt.plot(epoch_list,eff_rate_list,label="efficiency")
+        plt.plot(epoch_list,node_dead_num_list,'r-',label="node_dead_rate")
+        plt.legend()
+        plt.xlabel("epoch")
+        plt.ylabel("rate")
+        plt.show()
         
+        print("-----------The %dth area-----------------"%(index))
