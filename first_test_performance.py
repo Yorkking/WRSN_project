@@ -43,6 +43,17 @@ class Node(object):
         #print(self.__str__())
         #这里的time是MC充完电后的时刻，之所以这样是因为假定初始时间为0
         return self.full_power - self.left_power + self.power_consume * time
+    def copy(self, copy_node):
+        '''
+        该函数用来复制另一个node
+        '''
+        self.dead_time = copy_node.dead_time
+        self.axis = copy_node.axis
+        self.left_power = copy_node.left_power
+        self.power_consume = copy_node.power_consume
+        self.full_power = copy_node.full_power
+        
+        return
     __repr__ = __str__
         
 class Area(object):
@@ -158,7 +169,10 @@ class Area(object):
                 Dprint("choose_node_dist",choose_node_dist)
                 travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
-                chargeList[ choose_node_index ] = node_temp
+                
+                #修改nodeset中的node
+                chargeList[ choose_node_index ].copy( node_temp )
+                
                 del chargeList[ choose_node_index ]
                 mc = copy.deepcopy(MC_temp)
                 self.MCsets[mc_num] = copy.deepcopy(MC_temp)
