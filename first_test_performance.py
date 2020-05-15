@@ -82,7 +82,8 @@ class Area(object):
         chargeList = []
         for index,node in enumerate(self.NodeSets):
             if node.left_power <= 0.3*node.full_power:
-                chargeList.append(node)
+                chargeList.append([node,index])
+                #node_to_index[node] = index
         
         Dprint("chargeList1",len(chargeList))
         ## 剔除那些无法救活的节点
@@ -93,7 +94,7 @@ class Area(object):
         counter=0
         mc=self.MCsets[0]
         while counter<charge_node_num:
-            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[counter])
+            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[counter][0])
             
             if not ok:#如果该节点无法救活
                 del chargeList[counter]#删除该节点
@@ -103,8 +104,14 @@ class Area(object):
                 counter+=1
                 
         Dprint("chargeList2",chargeList)
+        
+        ## @all, 下面的返回结果是随便写的
+        if len(chargeList) == 0:
+            return node_dead_num, -1, 0.0, 0.0 , 0, 0
+        
+        
         #开始为充电请求队列安排MC进行充电
-        mc_num = 0
+        mc_num = 1
         travel_power=0
         charge_power=0
         
@@ -118,17 +125,17 @@ class Area(object):
             choose_node_index=0
             
             #选中节点的优先值
-            choose_node_priority = self.get_priority_value( chargeList[0], mc, choose_way)
+            choose_node_priority = self.get_priority_value( chargeList[0][0], mc, choose_way)
             
             for i in range(1, len(chargeList) ):
-                i_priority = self.get_priority_value( chargeList[i], mc, choose_way)
+                i_priority = self.get_priority_value( chargeList[i][0], mc, choose_way)
                 if choose_node_priority > i_priority:#比较节点之间的优先值
                     choose_node_index = i
                     choose_node_priority = i_priority
             Dprint("mc.axis",mc.axis)
-            Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ].axis)
+            Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
             #判断当前MC是否可以为最近的节点充电
-            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ])
+            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ][0])
             
             if ok:
                 
@@ -151,14 +158,22 @@ class Area(object):
                 Dprint( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
                 '''
                 #计算选中节点的距离
-                choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ].axis)
+                choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ][0].axis)
                 # mc = MC_temp
                 Dprint("mc.axis",mc.axis)
-                Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ].axis)
+                Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
                 Dprint("choose_node_dist",choose_node_dist)
                 travel_power += choose_node_dist * mc.power_consume
-                charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
-                chargeList[ choose_node_index ] = node_temp
+                charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                
+                
+                
+            
+                
+                chargeList[ choose_node_index ][0] = node_temp
+                self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
+                #print("169***")
+              
                 del chargeList[ choose_node_index ]
                 mc = copy.deepcopy(MC_temp)
                 self.MCsets[mc_num] = copy.deepcopy(MC_temp)
