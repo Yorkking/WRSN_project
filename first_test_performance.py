@@ -73,7 +73,6 @@ class Area(object):
     
     def chargeAlgorithm(self, choose_way):
         
-        
         ## 设置NodeSets的死亡时间
         for index,node in enumerate(self.NodeSets):
             self.NodeSets[index].dead_time = (node.left_power)/node.power_consume
@@ -109,6 +108,9 @@ class Area(object):
         travel_power=0
         charge_power=0
         
+        #初始化被充电的节点数量
+        charged_node_num = 0
+        
         MCnum=len( self.MCsets )
         while len(chargeList)>=1 and mc_num<MCnum:
             
@@ -129,6 +131,9 @@ class Area(object):
             ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ])
             
             if ok:
+                
+                charged_node_num += 1#被充电的节点数量加一
+                
                 Dprint("update")
                 #更新
                 
@@ -181,7 +186,7 @@ class Area(object):
         Dprint( travel_power )
         '''
         Dprint("travel_power",travel_power)
-        return node_dead_num, node_lived_num, charge_power, travel_power
+        return node_dead_num, node_lived_num, charge_power, travel_power, mc_num, charged_node_num
     
     def charge_is_ok(self, mc, Node):
         '''
