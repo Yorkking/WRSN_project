@@ -104,7 +104,7 @@ class Area(object):
                 
         Dprint("chargeList2",chargeList)
         #开始为充电请求队列安排MC进行充电
-        mc_num = 0
+        mc_num = 1
         travel_power=0
         charge_power=0
         
