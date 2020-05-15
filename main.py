@@ -28,7 +28,7 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-       a = 1/0
+       #a = 1/0
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -96,7 +96,7 @@ if __name__ == '__main__':
             total_sum = len(area.NodeSets)*area.NodeSets[0].full_power
             for i in area.NodeSets:
                 charge_sum_before += i.left_power
-            node_dead_num, node_lived_num, charge_power, travel_power= area.chargeAlgorithm('dist')
+            node_dead_num, node_lived_num, charge_power, travel_power, mc_use_nums, node_charge_nums = area.chargeAlgorithm('dist')
             
             
             charge_sum_after = 0
@@ -104,9 +104,13 @@ if __name__ == '__main__':
                 
                 charge_sum_after += i.left_power
             
+            if mc_use_nums != 0:
+                print("mc_use_nums:",mc_use_nums, "charge node nums: ",node_charge_nums)
+                print("charge_sum_before_precent:",charge_sum_before)
+                print("charge_sum_after_precent: ",charge_sum_after)
             
             eff_rate = 0.0
-            if charge_power+travel_power == 0:
+            if charge_power+travel_power == 0 or mc_use_nums == 0:
                 eff_rate = 0.0
             else:
                 eff_rate =  charge_power/(charge_power+travel_power)
