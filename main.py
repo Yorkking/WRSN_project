@@ -28,7 +28,7 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-       #a = 1/0
+       a = 1/0
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -107,7 +107,7 @@ if __name__ == '__main__':
             
             eff_rate = 0.0
             if charge_power+travel_power == 0:
-                eff_rate = 1
+                eff_rate = 0.0
             else:
                 eff_rate =  charge_power/(charge_power+travel_power)
 #                print(area)
