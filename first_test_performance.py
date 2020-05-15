@@ -170,6 +170,7 @@ class Area(object):
                 travel_power += choose_node_dist * mc.power_consume
                 charge_power += chargeList[ choose_node_index ].power_need_charge( mc.time )
                 
+                
                 #修改nodeset中的node
                 chargeList[ choose_node_index ].copy( node_temp )
                 
