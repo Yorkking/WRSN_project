@@ -106,8 +106,15 @@ class Area(object):
         Dprint("chargeList2",chargeList)
         
         ## @all, 下面的返回结果是随便写的
-        if len(chargeList) == 0:
-            return node_dead_num, -1, 0.0, 0.0 , 0, 0
+        if len(chargeList) <= 10:
+            TOCharge = False
+            for i in chargeList:
+                dist = self.getDist(mc.axis, i[0].axis)
+                if i[0].left_power <= dist/mc.v*i[0].power_consume*8:#后面的系数是自己凭经验(想象)设置的
+                    TOCharge = True
+                    break
+            if not TOCharge:
+                return node_dead_num, -1, 0, 0 , 0, 0,[]
         
         
         #开始为充电请求队列安排MC进行充电
@@ -119,6 +126,7 @@ class Area(object):
         charged_node_num = 0
         
         MCnum=len( self.MCsets )
+        MC_low_charge_list = []
         while len(chargeList)>=1 and mc_num<MCnum:
             
             #选择距离当前MC最近的节点
@@ -180,11 +188,14 @@ class Area(object):
                 
             else:
                 #开始一个新的巡回
+                MC_low_charge_list.append(mc_num)
                 mc_num+=1
                 mc=self.MCsets[mc_num]
             if mc.cycle<=0:
                 break
-        travelpower,chargepower,MC_temp = self.bytheway(mc)
+        travelpower,chargepower,MC_temp,Cancharge = self.bytheway(mc)
+        if not Cancharge:
+            MC_low_charge_list.append(mc_num)
         mc = MC_temp
         travel_power += travelpower
         charge_power += chargepower
@@ -201,7 +212,7 @@ class Area(object):
         Dprint( travel_power )
         '''
         Dprint("travel_power",travel_power)
-        return node_dead_num, node_lived_num, charge_power, travel_power, mc_num, charged_node_num
+        return node_dead_num, node_lived_num, charge_power, travel_power, mc_num, charged_node_num,MC_low_charge_list
     
     def charge_is_ok(self, mc, Node):
         '''
@@ -276,6 +287,8 @@ class Area(object):
                 if i_node.left_power<0.6*i_node.full_power:
                     dispose_list.append((self.getDist(MC.axis, i_node.axis) ,i_node.left_power,index))
             # sorted(dispose_list, self.cmp)
+            if(len(dispose_list)==0):
+                return travel_power,charge_power,MC,True
             dispose_list.sort(key=functools.cmp_to_key(self.cmp))
             dispose_list = dispose_list[:10]
             CanCharge = False
@@ -293,7 +306,7 @@ class Area(object):
                     break
             dispose_list.clear()
             if  not CanCharge:
-                return travel_power,charge_power,MC
+                return travel_power,charge_power,MC,False
             
             
             
