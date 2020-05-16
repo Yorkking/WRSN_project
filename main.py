@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Apr 11 09:40:56 2020
-
 @author: York_king
 """
 import numpy as np
@@ -28,7 +27,7 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-       #a = 1/0
+       
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -57,16 +56,22 @@ if __name__ == '__main__':
     
     # 下面是模拟的过程
     
-    cycle = 60
+    cycle = 3600
+    epochs = 1000
+    eff_rate_list = [[] for _ in range(len(depot_pos_set))]
+    node_dead_num_list = [[] for _ in range(len(depot_pos_set))]
+    redundancy_list = [[] for _ in range(len(depot_pos_set))]
+    mc_num_list = [[] for _ in range(len(depot_pos_set))]
+    charged_node_num_list = [[] for _ in range(len(depot_pos_set))]
+    area = []
     for index in range(len(depot_pos_set)):
-        
         depot_site = depot_pos_set[index]
         MCList = []
         for i in range(num_mc_set[index]):
             #def __init__(self, _axis,_full_power,_left_power, _power_consume, _v,_charge_rate,_time=0.0):
             mc = fp.MC(depot_site,MC_full_power,MC_left_power,MC_power_consume,MC_v,MC_charge_rate,cycle)
             MCList.append(mc)
-        
+            
         ## 初始化传感器节点
         NodeList = []
         #(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
@@ -80,78 +85,112 @@ if __name__ == '__main__':
             # def __init__(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
             node = fp.Node(axis,node_full_power,rate*node_full_power,power_consume)
             NodeList.append(node)
+                
             
-        
-            
-            
-        area = fp.Area(MCList,NodeList,depot_site)
-        #print("for the "+str(index)+" area")
-        
-        epochs = 1000
-        eff_rate_list = []
-        node_dead_num_list = []
-        for epoch in range(epochs):
+                
+                
+        area.append(fp.Area(MCList,NodeList,depot_site))
+    
+    
+    for epoch in range(epochs):
+        # print(epoch)
+        for index in range(len(depot_pos_set)):
+
             charge_sum_before = 0
             # print(MCList[0].)
-            total_sum = len(area.NodeSets)*area.NodeSets[0].full_power
-            for i in area.NodeSets:
+            total_sum = len(area[index].NodeSets)*area[index].NodeSets[0].full_power
+            for i in area[index].NodeSets:
                 charge_sum_before += i.left_power
-            node_dead_num, node_lived_num, charge_power, travel_power, mc_use_nums, node_charge_nums = area.chargeAlgorithm('dist')
+            node_dead_num, node_lived_num, charge_power, travel_power,mc_num, charged_node_num,MC_low_charge_list = area[index].chargeAlgorithm('dist')
             
-            
+            for i in MC_low_charge_list:
+                # print(area.MCsets[i].left_power)
+                area[index].MCsets[i].left_power = area[index].MCsets[i].full_power
+                area[index].MCsets[i].axis = depot_site
             charge_sum_after = 0
-            for i in area.NodeSets:
+            for i in area[index].NodeSets:
                 
                 charge_sum_after += i.left_power
             
-            if mc_use_nums != 0:
-                print("mc_use_nums:",mc_use_nums, "charge node nums: ",node_charge_nums)
-                print("charge_sum_before_precent:",charge_sum_before)
-                print("charge_sum_after_precent: ",charge_sum_after)
             
             eff_rate = 0.0
-            if charge_power+travel_power == 0 or mc_use_nums == 0:
+            if charge_power+travel_power == 0:
                 eff_rate = 0.0
             else:
                 eff_rate =  charge_power/(charge_power+travel_power)
-#                print(area)
-#                print("depot_pos_set_index:%d"%index)
-#                print("the %d rounds"%(epoch))
-#                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
-#                print("charge_power:",charge_power,"travel_power:",travel_power)
-#                
-#                print("efficiency rate:", eff_rate)
-#                print("charge_sum_before_precent:",charge_sum_before/total_sum)
-#                print("charge_sum_after_precent:",charge_sum_after/total_sum)
-#                print("-------------------------------------------------\n")
+    #               print(area[index])
+    #               print("depot_pos_set_index:%d"%index)
+    #               print("the %d rounds"%(epoch))
+    #                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
+    #                print("charge_power:",charge_power,"travel_power:",travel_power)
+    #                
+    #                print("efficiency rate:", eff_rate)
+    #                print("charge_sum_before_precent:",charge_sum_before/total_sum)
+    #                print("charge_sum_after_precent:",charge_sum_after/total_sum)
+    #                print("-------------------------------------------------\n")
+            if(epoch%100==0):
+                print(index,charge_power,travel_power)
+            if len(MC_low_charge_list)!=0:
                 
-            eff_rate_list.append(eff_rate)
-            node_dead_num_list.append(node_dead_num/node_nums)
-            
-            for i in area.NodeSets:
+                eff_rate_list[index].append(eff_rate)
+                node_dead_num_list[index].append(node_dead_num/node_nums)
+                redundancy_list[index].append(mc_num/len(area[index].MCsets))
+                mc_num_list[index].append(mc_num)
+                charged_node_num_list[index].append(charged_node_num)
+            # eff_rate_list[index].append(eff_rate)
+            # node_dead_num_list[index].append(node_dead_num/node_nums)
+            for i in area[index].NodeSets:
                 i.left_power-=i.power_consume*cycle
-            for i in area.MCsets:
+                if (i.left_power<0):
+                    i.left_power = 0
+            for i in area[index].MCsets:
                 if i.cycle<=0:
                     i.cycle+=cycle
                 else:
                     i.cycle=cycle
+    
+        
+        
+
           
         ## 此处增加代码，把每个区域模拟的结果的数据以图像的形式表示出来
         ## 比如画出死亡率随模拟周期轮数的变化曲线图；充电效率的周期变化曲线
-        epoch_list = [i for i in range(epochs)]
+    for index in range(len(depot_pos_set)):
+        cycle_list = [i for i in range(len(eff_rate_list[index]))]
+        
         plt.figure()
-        plt.plot(epoch_list,eff_rate_list,'g-',label="efficiency")
-        #plt.plot(epoch_list,node_dead_num_list,label="node_dead_rate")
+        plt.plot(cycle_list,eff_rate_list[index],'g-',label="efficiency")
         plt.legend()
-        plt.xlabel("epoch")
+        plt.xlabel("cycle")
         plt.ylabel("rate")
         plt.show()
         
         plt.figure()
-        #plt.plot(epoch_list,eff_rate_list,label="efficiency")
-        plt.plot(epoch_list,node_dead_num_list,'r-',label="node_dead_rate")
+        plt.plot(cycle_list,node_dead_num_list[index],'r-',label="node_dead_rate")
         plt.legend()
-        plt.xlabel("epoch")
+        plt.xlabel("cycle")
+        plt.ylabel("rate")
+        plt.show()
+        
+        
+        plt.figure()
+        plt.plot(cycle_list,redundancy_list[index],'b-',label="redundancy")
+        plt.legend()
+        plt.xlabel("cycle")
+        plt.ylabel("rate")
+        plt.show()
+        
+        plt.figure()
+        plt.plot(cycle_list,mc_num_list[index],'y-',label="mc_num")
+        plt.legend()
+        plt.xlabel("cycle")
+        plt.ylabel("rate")
+        plt.show()
+        
+        plt.figure()
+        plt.plot(cycle_list,charged_node_num_list[index],'g-',label="charged_node_num")
+        plt.legend()
+        plt.xlabel("cycle")
         plt.ylabel("rate")
         plt.show()
         
