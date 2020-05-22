@@ -63,6 +63,7 @@ if __name__ == '__main__':
     redundancy_list = [[] for _ in range(len(depot_pos_set))]
     mc_num_list = [[] for _ in range(len(depot_pos_set))]
     charged_node_num_list = [[] for _ in range(len(depot_pos_set))]
+    charge_success_rate_list = [[] for _ in range(len(depot_pos_set))]
     area = []
     for index in range(len(depot_pos_set)):
         depot_site = depot_pos_set[index]
@@ -99,55 +100,61 @@ if __name__ == '__main__':
             charge_sum_before = 0
             # print(MCList[0].)
             total_sum = len(area[index].NodeSets)*area[index].NodeSets[0].full_power
+            run_Algorithm = False
+            Before_time = area[index].MCsets[0].time
             for i in area[index].NodeSets:
                 charge_sum_before += i.left_power
-            node_dead_num, node_lived_num, charge_power, travel_power,mc_num, charged_node_num,MC_low_charge_list = area[index].chargeAlgorithm('dist')
+                if i.left_power<i.full_power*0.3:
+                    run_Algorithm = True
+            if run_Algorithm:
+                node_dead_num, node_lived_num, charge_power, travel_power, charged_node_num,After_time = area[index].chargeAlgorithm('dist')
             
-            for i in MC_low_charge_list:
-                # print(area.MCsets[i].left_power)
-                area[index].MCsets[i].left_power = area[index].MCsets[i].full_power
-                area[index].MCsets[i].axis = depot_site
-            charge_sum_after = 0
-            for i in area[index].NodeSets:
+                    
+                for i in area[index].NodeSets:
+                    i.time = After_time
+                    i.left_power = (After_time-i.time)*i.power_consume
+                for i in area[index].MCsets:
+                    i.time = After_time
+                    i.left_power = (After_time-i.time)*i.power_consume
+                charge_sum_after = 0
+                for i in area[index].NodeSets:
+                    
+                    charge_sum_after += i.left_power
                 
-                charge_sum_after += i.left_power
-            
-            
-            eff_rate = 0.0
-            if charge_power+travel_power == 0:
+                
                 eff_rate = 0.0
-            else:
-                eff_rate =  charge_power/(charge_power+travel_power)
-    #               print(area[index])
-    #               print("depot_pos_set_index:%d"%index)
-    #               print("the %d rounds"%(epoch))
-    #                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
-    #                print("charge_power:",charge_power,"travel_power:",travel_power)
-    #                
-    #                print("efficiency rate:", eff_rate)
-    #                print("charge_sum_before_precent:",charge_sum_before/total_sum)
-    #                print("charge_sum_after_precent:",charge_sum_after/total_sum)
-    #                print("-------------------------------------------------\n")
-            if(epoch%100==0):
-                print(index,charge_power,travel_power)
-            if len(MC_low_charge_list)!=0:
-                
+                if charge_power+travel_power == 0:
+                    eff_rate = 0.0
+                else:
+                    eff_rate =  charge_power/(charge_power+travel_power)
+        #               print(area[index])
+        #               print("depot_pos_set_index:%d"%index)
+        #               print("the %d rounds"%(epoch))
+        #                print("node_dead_num:",node_dead_num," node_lived_num:",node_lived_num)
+        #                print("charge_power:",charge_power,"travel_power:",travel_power)
+        #                
+        #                print("efficiency rate:", eff_rate)
+        #                print("charge_sum_before_precent:",charge_sum_before/total_sum)
+        #                print("charge_sum_after_precent:",charge_sum_after/total_sum)
+        #                print("-------------------------------------------------\n")
+                if(epoch%100==0):
+                    print(index,charge_power,travel_power)
+
+                    
                 eff_rate_list[index].append(eff_rate)
                 node_dead_num_list[index].append(node_dead_num/node_nums)
-                redundancy_list[index].append(mc_num/len(area[index].MCsets))
-                mc_num_list[index].append(mc_num)
+                # redundancy_list[index].append(mc_num/len(area[index].MCsets))
+                # mc_num_list[index].append(mc_num)
                 charged_node_num_list[index].append(charged_node_num)
-            # eff_rate_list[index].append(eff_rate)
-            # node_dead_num_list[index].append(node_dead_num/node_nums)
-            for i in area[index].NodeSets:
-                i.left_power-=i.power_consume*cycle
-                if (i.left_power<0):
-                    i.left_power = 0
-            for i in area[index].MCsets:
-                if i.cycle<=0:
-                    i.cycle+=cycle
-                else:
-                    i.cycle=cycle
+                # charge_success_rate_list[index].append(charged_node_num/chargeList_len)#chargeList_len:请求队列长度
+                # eff_rate_list[index].append(eff_rate)
+                # node_dead_num_list[index].append(node_dead_num/node_nums)
+            else:
+                print(i.left_power/i.full_power)
+                for i in area[index].NodeSets:
+                    i.left_power-=i.power_consume*cycle
+                    if (i.left_power<0):
+                        i.left_power = 0
     
         
         
@@ -173,19 +180,19 @@ if __name__ == '__main__':
         plt.show()
         
         
-        plt.figure()
-        plt.plot(cycle_list,redundancy_list[index],'b-',label="redundancy")
-        plt.legend()
-        plt.xlabel("cycle")
-        plt.ylabel("rate")
-        plt.show()
+        # plt.figure()
+        # plt.plot(cycle_list,redundancy_list[index],'b-',label="redundancy")
+        # plt.legend()
+        # plt.xlabel("cycle")
+        # plt.ylabel("rate")
+        # plt.show()
         
-        plt.figure()
-        plt.plot(cycle_list,mc_num_list[index],'y-',label="mc_num")
-        plt.legend()
-        plt.xlabel("cycle")
-        plt.ylabel("rate")
-        plt.show()
+        # plt.figure()
+        # plt.plot(cycle_list,mc_num_list[index],'y-',label="mc_num")
+        # plt.legend()
+        # plt.xlabel("cycle")
+        # plt.ylabel("rate")
+        # plt.show()
         
         plt.figure()
         plt.plot(cycle_list,charged_node_num_list[index],'g-',label="charged_node_num")
@@ -193,5 +200,12 @@ if __name__ == '__main__':
         plt.xlabel("cycle")
         plt.ylabel("rate")
         plt.show()
+        
+        # plt.figure()
+        # plt.plot(cycle_list,charge_success_rate_list[index],'g-',label="charge_success_rate")
+        # plt.legend()
+        # plt.xlabel("cycle")
+        # plt.ylabel("rate")
+        # plt.show()
         
         print("-----------The %dth area-----------------"%(index))
