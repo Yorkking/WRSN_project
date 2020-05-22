@@ -74,9 +74,14 @@ class Area(object):
     
     def chargeAlgorithm(self, choose_way):
         
-        ## 设置NodeSets的死亡时间
+        ## NodeSets时间的初始化, MCsets的初始化
+        
         for index,node in enumerate(self.NodeSets):
-            self.NodeSets[index].dead_time = (node.left_power)/node.power_consume
+            self.NodeSets[index].time = 0
+        
+        for index,mc in enumerate(self.MCsets):
+            self.MCsets[index].time = 0
+            self.MCsets[index].left_power = self.MCsets[index].full_power
         
         
         ## 当存在一个节点电量小于30%以下时，调用该函数，将60%以下的节点进入充电队列,保存了node
@@ -113,6 +118,7 @@ class Area(object):
         '''
         #开始为充电请求队列安排MC进行充电
         travel_power=0
+        total_consume = 0.0
         charge_power=0
         #初始化被充电的节点数量
         charged_node_num = 0
@@ -121,7 +127,7 @@ class Area(object):
             solve_node_num = 0 # 本次循环解决充电请求的节点数量计数
             
             #遍历MC列表（这里是self里的，因此是引用，可以通过mc直接改变MC列表里的mc）
-            for mc in self.MCsets:
+            for index0, mc in enumerate(self.MCsets):
                 if (len(chargeList)==0):
                     break
                 #初始化对于当前MC最优先的节点index
@@ -158,13 +164,14 @@ class Area(object):
                     Dprint("choose_node_dist",choose_node_dist)
                     
                     #计算本次充电所花费的旅程电量和充电电量
-                    travel_power += choose_node_dist * mc.power_consume
+                    #travel_power += choose_node_dist * mc.power_consume
                     # print(travel_power)
                     # print(choose_node_dist * mc.power_consume)
-                    charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                    charge_power += node_temp.left_power - chargeList[ choose_node_index ][0].left_power
                     
                     #更新节点和MC
                     self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
+                    self.MCsets[index0] = MC_temp
                     #print("169***")
                     del chargeList[ choose_node_index ]
                     mc = copy.deepcopy(MC_temp)
@@ -176,10 +183,35 @@ class Area(object):
                 Dprint("MC charge is over.")
                 break
         
+        ## 节点和MC的时间同步
         After_time = 0
         for i in self.MCsets:
             After_time = max(After_time,i.time)
+            
+        for index, node in enumerate(self.NodeSets):
+            self.NodeSets[index].left_power -= (After_time - self.NodeSets[index].time)*self.NodeSets[index].power_consume
+            self.NodeSets[index].time = After_time
+            
+        for index,MC in enumerate(self.MCsets):
+            self.MCsets[index].time = After_time
+        
+        ## by the way
         travelpower,chargepower= self.bytheway()
+        
+        ## 再次同步
+        After_time = 0
+        for i in self.MCsets:
+            After_time = max(After_time,i.time)
+            
+        for index, node in enumerate(self.NodeSets):
+            self.NodeSets[index].left_power -= (After_time - self.NodeSets[index].time)*self.NodeSets[index].power_consume
+            self.NodeSets[index].time = After_time
+            
+        for index,MC in enumerate(self.MCsets):
+            total_consume += (MC.full_power-MC.left_power)
+            self.MCsets[index].time = After_time
+        
+        
         # print(travelpower)
         # print(travel_power)
         travel_power += travelpower
@@ -197,7 +229,7 @@ class Area(object):
         Dprint( travel_power )
         '''
         Dprint("travel_power",travel_power)
-        return node_dead_num, node_lived_num, charge_power, travel_power, charged_node_num,After_time
+        return node_dead_num, node_lived_num, charge_power, total_consume, charged_node_num,After_time
     
     def charge_is_ok(self, mc, Node):
         '''
@@ -225,14 +257,18 @@ class Area(object):
         dist = self.getDist(MC.axis, node.axis)
         Dprint("dist",dist)
         time_to = dist/MC.v
-        if time_to + MC.time > node.dead_time:
-            return False,None,None
+        
         ## 去的能量消耗
         MC_travel_power = time_to * MC.power_consume
         MC.left_power -=  MC_travel_power
         MC.time += time_to
         if MC.left_power <= 0:
             return False,None,None
+        
+        ## 这段时间node的消耗
+        node.left_power = node.left_power - node.power_consume * (MC.time-node.time)
+        if(node.left_power<0):
+            return False, None, None
         
         ## 无法充满电
         if node.full_power - node.left_power > MC.left_power:
@@ -244,8 +280,6 @@ class Area(object):
         MC.left_power -= node.full_power - node.left_power
         dist_depot = self.getDist(MC.axis,self.depot_site)
         
-        #6000秒一个周期（600秒的话 MC什么都不会做）
-        MC.cycle-=(time_charge+time_to)
         
         
         
@@ -257,8 +291,10 @@ class Area(object):
         ## 如果成功，更新MC的坐标，以及node的剩余电量
         MC.axis = node.axis       
         node.left_power = node.full_power
+        node.time = MC.time
         
         return True, MC, node
+
     def bytheway(self):
         ##将80%以下的节点进入充电队列,保存了node
         chargeList = []
@@ -310,7 +346,7 @@ class Area(object):
             solve_node_num = 0 # 本次循环解决充电请求的节点数量计数
             
             #遍历MC列表（这里是self里的，因此是引用，可以通过mc直接改变MC列表里的mc）
-            for mc in self.MCsets:
+            for index0, mc in enumerate(self.MCsets):
                 if (len(chargeList)==0):
                     break
                 #初始化对于当前MC最优先的节点index
@@ -352,10 +388,11 @@ class Area(object):
                     
                     #计算本次充电所花费的旅程电量和充电电量
                     travel_power += choose_node_dist * mc.power_consume
-                    charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                    charge_power += node_temp.left_power - chargeList[ choose_node_index ][0].left_power
                     
                     #更新节点和MC
                     self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
+                    self.MCsets[index0] = MC_temp
                     #print("169***")
                     del chargeList[ choose_node_index ]
                     mc = copy.deepcopy(MC_temp)

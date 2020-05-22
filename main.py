@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     wrsn = depots_deployment.WRSNEnv()
     try:
-       
+       #a = 1/0
        with open('./data/first_algorithm.data','r') as f:
            from numpy import array
            result = eval(f.read())
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         for i in range(node_nums):
             axis = wrsn.loc_nodes[sensors_depart_set[index][i]]
             #Dprint(axis)
-            rate = np.random.uniform(0.3,0.8)
+            rate = np.random.uniform(0.2,0.5)
             power_consume = np.random.uniform(1e-3,1e-2)
             # def __init__(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
             node = fp.Node(axis,node_full_power,rate*node_full_power,power_consume)
@@ -107,26 +107,14 @@ if __name__ == '__main__':
                 if i.left_power<i.full_power*0.3:
                     run_Algorithm = True
             if run_Algorithm:
-                node_dead_num, node_lived_num, charge_power, travel_power, charged_node_num,After_time = area[index].chargeAlgorithm('dist')
+                node_dead_num, node_lived_num, charge_power, total_consume, charged_node_num,After_time = area[index].chargeAlgorithm('dist')
             
-                    
-                for i in area[index].NodeSets:
-                    i.time = After_time
-                    i.left_power = (After_time-i.time)*i.power_consume
-                for i in area[index].MCsets:
-                    i.time = After_time
-                    i.left_power = (After_time-i.time)*i.power_consume
-                charge_sum_after = 0
-                for i in area[index].NodeSets:
-                    
-                    charge_sum_after += i.left_power
-                
                 
                 eff_rate = 0.0
-                if charge_power+travel_power == 0:
+                if total_consume == 0:
                     eff_rate = 0.0
                 else:
-                    eff_rate =  charge_power/(charge_power+travel_power)
+                    eff_rate =  charge_power/(total_consume)
         #               print(area[index])
         #               print("depot_pos_set_index:%d"%index)
         #               print("the %d rounds"%(epoch))
@@ -137,8 +125,7 @@ if __name__ == '__main__':
         #                print("charge_sum_before_precent:",charge_sum_before/total_sum)
         #                print("charge_sum_after_precent:",charge_sum_after/total_sum)
         #                print("-------------------------------------------------\n")
-                if(epoch%100==0):
-                    print(index,charge_power,travel_power)
+                
 
                     
                 eff_rate_list[index].append(eff_rate)
@@ -150,7 +137,7 @@ if __name__ == '__main__':
                 # eff_rate_list[index].append(eff_rate)
                 # node_dead_num_list[index].append(node_dead_num/node_nums)
             else:
-                print(i.left_power/i.full_power)
+                #print(i.left_power/i.full_power)
                 for i in area[index].NodeSets:
                     i.left_power-=i.power_consume*cycle
                     if (i.left_power<0):
@@ -200,6 +187,7 @@ if __name__ == '__main__':
         plt.xlabel("cycle")
         plt.ylabel("rate")
         plt.show()
+        
         
         # plt.figure()
         # plt.plot(cycle_list,charge_success_rate_list[index],'g-',label="charge_success_rate")

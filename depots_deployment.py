@@ -459,7 +459,7 @@ class WRSNEnv(object):
      
         
     def charge_power_for_node(self, node_j_id):
-        return self.node_full_power * 0.5
+        return self.node_full_power * 0.00001
     #############################加入类里去作函数
     def algorithm_5(self, depot_list, area_list):
         mc_num_list=[]
