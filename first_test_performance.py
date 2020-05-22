@@ -24,12 +24,13 @@ class MC(object):
         #self.travel_cons_rate = _travel_cons_rate
 
 class Node(object):
-    def __init__(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0):
+    def __init__(self,_axis,_full_power,_left_power, _power_consume,_dead_time=0.0,_time = 0.0):
         self.dead_time = _dead_time
         self.axis = _axis
         self.left_power = _left_power
         self.power_consume = _power_consume
         self.full_power = _full_power
+        self.time = _time
     def __str__(self):
         return "Object Node:\n" \
             + "{\ndead_time: "+str(self.dead_time)+"\n" \
@@ -78,10 +79,10 @@ class Area(object):
             self.NodeSets[index].dead_time = (node.left_power)/node.power_consume
         
         
-        ## 警戒线以下的节点进入充电队列,保存了node
+        ## 当存在一个节点电量小于30%以下时，调用该函数，将60%以下的节点进入充电队列,保存了node
         chargeList = []
         for index,node in enumerate(self.NodeSets):
-            if node.left_power <= 0.3*node.full_power:
+            if node.left_power <= 0.6*node.full_power:
                 chargeList.append([node,index])
                 #node_to_index[node] = index
         
@@ -89,7 +90,7 @@ class Area(object):
         ## 剔除那些无法救活的节点
         ## Your codes are here
         node_dead_num = 0
-        
+        print("chargeList_len:",len(chargeList))
         charge_node_num=len(chargeList)
         counter=0
         mc=self.MCsets[0]
@@ -105,100 +106,85 @@ class Area(object):
                 
         Dprint("chargeList2",chargeList)
         
-        ## @all, 下面的返回结果是随便写的
-        if len(chargeList) <= 10:
-            TOCharge = False
-            for i in chargeList:
-                dist = self.getDist(mc.axis, i[0].axis)
-                if i[0].left_power <= dist/mc.v*i[0].power_consume*8:#后面的系数是自己凭经验(想象)设置的
-                    TOCharge = True
-                    break
-            if not TOCharge:
-                return node_dead_num, -1, 0, 0 , 0, 0,[]
-        
-        
+        print("del_after_chargeList_len:",len(chargeList))
+        '''
+        充电算法：遍历MC列表，每个MC选择最优先的节点进行充电，当充电请求队列被处理完或者遍历一遍MClist后
+        无充电节点被处理则跳出循环
+        '''
         #开始为充电请求队列安排MC进行充电
-        mc_num = 1
         travel_power=0
         charge_power=0
-        
         #初始化被充电的节点数量
         charged_node_num = 0
         
-        MCnum=len( self.MCsets )
-        MC_low_charge_list = []
-        while len(chargeList)>=1 and mc_num<MCnum:
+        while len(chargeList)>=1:
+            solve_node_num = 0 # 本次循环解决充电请求的节点数量计数
             
-            #选择距离当前MC最近的节点
-            choose_node_index=0
-            
-            #选中节点的优先值
-            choose_node_priority = self.get_priority_value( chargeList[0][0], mc, choose_way)
-            
-            for i in range(1, len(chargeList) ):
-                i_priority = self.get_priority_value( chargeList[i][0], mc, choose_way)
-                if choose_node_priority > i_priority:#比较节点之间的优先值
-                    choose_node_index = i
-                    choose_node_priority = i_priority
-            Dprint("mc.axis",mc.axis)
-            Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
-            #判断当前MC是否可以为最近的节点充电
-            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ][0])
-            
-            if ok:
+            #遍历MC列表（这里是self里的，因此是引用，可以通过mc直接改变MC列表里的mc）
+            for mc in self.MCsets:
+                if (len(chargeList)==0):
+                    break
+                #初始化对于当前MC最优先的节点index
+                choose_node_index=0
+                #选中节点的优先值
+                choose_node_priority = self.get_priority_value( chargeList[0][0], mc, choose_way)
                 
-                charged_node_num += 1#被充电的节点数量加一
-                
-                Dprint("update")
-                #更新
-                
-                
-                '''
-                Dprint('aaa')
-                Dprint( choose_node_dist )
-                Dprint( mc.power_consume )
-                
-                Dprint( chargeList[ choose_node_index ].full_power )
-                Dprint( chargeList[ choose_node_index ].left_power )
-                Dprint( chargeList[ choose_node_index ].power_consume )
-                Dprint( mc.time )
-                
-                Dprint( chargeList[ choose_node_index ].power_need_charge( mc.time ) )
-                '''
-                #计算选中节点的距离
-                choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ][0].axis)
-                # mc = MC_temp
+                #遍历充电请求队列来选择最优先的节点index
+                for i in range(1, len(chargeList) ):
+                    i_priority = self.get_priority_value( chargeList[i][0], mc, choose_way)
+                    if choose_node_priority > i_priority:#比较节点之间的优先值
+                        choose_node_index = i
+                        choose_node_priority = i_priority
+                        
                 Dprint("mc.axis",mc.axis)
                 Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
-                Dprint("choose_node_dist",choose_node_dist)
-                travel_power += choose_node_dist * mc.power_consume
-                charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                #判断当前MC是否可以为最近的节点充电
+                ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ][0])
                 
+                if ok:
+                    # print("OK")
+                    self.NodeSets[chargeList[ choose_node_index ][1]].time = MC_temp.time
+                    charged_node_num += 1#被充电的节点数量加一
+                    solve_node_num += 1#该循环中被充电的节点数量加一
+                    
+                    Dprint("update")
+                    #更新
+
+                    #计算选中节点的距离
+                    choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ][0].axis)
+                    # mc = MC_temp
+                    Dprint("mc.axis",mc.axis)
+                    Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
+                    Dprint("choose_node_dist",choose_node_dist)
+                    
+                    #计算本次充电所花费的旅程电量和充电电量
+                    travel_power += choose_node_dist * mc.power_consume
+                    # print(travel_power)
+                    # print(choose_node_dist * mc.power_consume)
+                    charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                    
+                    #更新节点和MC
+                    self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
+                    #print("169***")
+                    del chargeList[ choose_node_index ]
+                    mc = copy.deepcopy(MC_temp)
                 
+                    
                 
             
-                
-                chargeList[ choose_node_index ][0] = node_temp
-                self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
-                #print("169***")
-              
-                del chargeList[ choose_node_index ]
-                mc = copy.deepcopy(MC_temp)
-                self.MCsets[mc_num] = copy.deepcopy(MC_temp)
-                
-            else:
-                #开始一个新的巡回
-                MC_low_charge_list.append(mc_num)
-                mc_num+=1
-                mc=self.MCsets[mc_num]
-            if mc.cycle<=0:
+            if solve_node_num == 0:
+                Dprint("MC charge is over.")
                 break
-        travelpower,chargepower,MC_temp,Cancharge = self.bytheway(mc)
-        if not Cancharge:
-            MC_low_charge_list.append(mc_num)
-        mc = MC_temp
+        
+        After_time = 0
+        for i in self.MCsets:
+            After_time = max(After_time,i.time)
+        travelpower,chargepower= self.bytheway()
+        # print(travelpower)
+        # print(travel_power)
         travel_power += travelpower
         charge_power += chargepower
+        
         #print("16 charge_power:",charge_power)
         #计算死亡节点
         node_dead_num += len(chargeList)
@@ -206,13 +192,12 @@ class Area(object):
         node_num = len( self.NodeSets )
         node_lived_num = node_num-node_dead_num
         
-        Dprint("mc",mc_num)
         '''
         Dprint( charge_power )
         Dprint( travel_power )
         '''
         Dprint("travel_power",travel_power)
-        return node_dead_num, node_lived_num, charge_power, travel_power, mc_num, charged_node_num,MC_low_charge_list
+        return node_dead_num, node_lived_num, charge_power, travel_power, charged_node_num,After_time
     
     def charge_is_ok(self, mc, Node):
         '''
@@ -274,49 +259,118 @@ class Area(object):
         node.left_power = node.full_power
         
         return True, MC, node
-    def bytheway(self,mc):
-        MC = copy.deepcopy(mc)
-        #需要注意对MC node的改变要更新到self里面
-        dispose_list = []#处理队列  长度限制为10
-        # w = 0.5          #传感器剩余电量与传感器(w)与传感器与MC距离(1-w)的权重(暂时还不没想好怎么考虑权重，感觉需要数据支撑)
-        travel_power = 0.0
-        charge_power = 0.0
-        while(1):
-            for index,i_node in enumerate(self.NodeSets):
-                #考虑电量小于0.6的 距离最短的传感器 (距离和剩余电量之间的权重暂时不知道怎么考虑)
-                if i_node.left_power<0.6*i_node.full_power:
-                    dispose_list.append((self.getDist(MC.axis, i_node.axis) ,i_node.left_power,index))
-            # sorted(dispose_list, self.cmp)
-            if(len(dispose_list)==0):
-                return travel_power,charge_power,MC,True
-            dispose_list.sort(key=functools.cmp_to_key(self.cmp))
-            dispose_list = dispose_list[:10]
-            CanCharge = False
-            for i_dispose_node_info in  dispose_list:
-                i_dispose_node = self.NodeSets[i_dispose_node_info[2]]
-                i_dispose_dis = i_dispose_node_info[0]
-                ok, MC_temp, node_temp = self.charge_is_ok(MC,i_dispose_node)
-                if ok: 
-                    CanCharge = True
-                    # 这样便把MC的状态和node充完电状态更新了
-                    MC = MC_temp
-                    travel_power += i_dispose_dis*MC.power_consume
-                    charge_power += i_dispose_node.power_need_charge(MC.time)
-                    i_dispose_node = node_temp
+    def bytheway(self):
+        ##将80%以下的节点进入充电队列,保存了node
+        chargeList = []
+        for index,node in enumerate(self.NodeSets):
+            if node.left_power <= 0.8*node.full_power:
+                chargeList.append([node,index])
+                #node_to_index[node] = index
+        
+        Dprint("chargeList1",len(chargeList))
+        ## 剔除那些无法救活的节点
+        ## Your codes are here
+        node_dead_num = 0
+        # dispose_list = []
+        # Dis_MAX = -1
+        # Charge_MAX = -1
+        # for i in chargeList:
+        #     Dis_MAX = max(Dis_MAX,self.getDist(MC.axis, i_node.axis))
+        
+        charge_node_num=len(chargeList)
+        counter=0
+        mc=self.MCsets[0]
+        while counter<charge_node_num:
+            ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[counter][0])
+            
+            if not ok:#如果该节点无法救活
+                del chargeList[counter]#删除该节点
+                charge_node_num-=1
+                node_dead_num += 1
+            else:
+                counter+=1
+                
+        Dprint("chargeList2",chargeList)
+        
+        
+        
+        
+        
+        '''
+        充电算法：遍历MC列表，每个MC选择最优先的节点进行充电，当充电请求队列被处理完或者遍历一遍MClist后
+        无充电节点被处理则跳出循环
+        '''
+        #开始为充电请求队列安排MC进行充电
+        travel_power=0
+        charge_power=0
+        #初始化被充电的节点数量
+        charged_node_num = 0
+        
+        while len(chargeList)>=1:
+            solve_node_num = 0 # 本次循环解决充电请求的节点数量计数
+            
+            #遍历MC列表（这里是self里的，因此是引用，可以通过mc直接改变MC列表里的mc）
+            for mc in self.MCsets:
+                if (len(chargeList)==0):
                     break
-            dispose_list.clear()
-            if  not CanCharge:
-                return travel_power,charge_power,MC,False
+                #初始化对于当前MC最优先的节点index
+                choose_node_index=-1
+                choose_node_priority = 1e10
+                dispose_list = []
+                Dis_MAX = -1
+                Charge_MAX = -1
+                for i in chargeList:
+                    Dis_MAX = max(Dis_MAX,self.getDist(mc.axis, i[0].axis))
+                    Charge_MAX = max(Charge_MAX,i[0].left_power)
+                #遍历充电请求队列来选择最优先的节点index
+                for i in range(len(chargeList)):
+                    if self.getDist(chargeList[i][0].axis,mc.axis)==0:
+                        continue
+                    i_priority = chargeList[i][0].left_power*Charge_MAX/(self.getDist(chargeList[i][0].axis,mc.axis)*Dis_MAX)
+                    if choose_node_priority < i_priority:#比较节点之间的优先值
+                        choose_node_index = i
+                        choose_node_priority = i_priority
+                        
+                Dprint("mc.axis",mc.axis)
+                Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
+                #判断当前MC是否可以为最近的节点充电
+                ok, MC_temp, node_temp = self.charge_is_ok(mc,chargeList[ choose_node_index ][0])
+                
+                if ok:
+                    charged_node_num += 1#被充电的节点数量加一
+                    solve_node_num += 1#该循环中被充电的节点数量加一
+                    
+                    Dprint("update")
+                    #更新
+
+                    #计算选中节点的距离
+                    choose_node_dist = self.getDist(mc.axis, chargeList[ choose_node_index ][0].axis)
+                    # mc = MC_temp
+                    Dprint("mc.axis",mc.axis)
+                    Dprint("chargeList[ choose_node_index ].axis",chargeList[ choose_node_index ][0].axis)
+                    Dprint("choose_node_dist",choose_node_dist)
+                    
+                    #计算本次充电所花费的旅程电量和充电电量
+                    travel_power += choose_node_dist * mc.power_consume
+                    charge_power += chargeList[ choose_node_index ][0].power_need_charge( mc.time )
+                    
+                    #更新节点和MC
+                    self.NodeSets[ chargeList[ choose_node_index ][1]] = node_temp
+                    #print("169***")
+                    del chargeList[ choose_node_index ]
+                    mc = copy.deepcopy(MC_temp)
+                    
+                
+            
+            if solve_node_num == 0:
+                Dprint("MC charge is over.")
+                break
+        
+        return travel_power,charge_power
+
             
             
             
-    def cmp(self,x,y):
-        if x[0]<y[0]:
-#               x.left_power/y.left_power *w + 
-#               x.dist/y.dist * (1-w)  < 1
-            return True
-        else:
-            return False
         
     __repr__ = __str__  
             
